@@ -1,0 +1,4 @@
+src/**/*__release__.o
+src/**/*__debug__.o
+analyze
+analyze_dbg
