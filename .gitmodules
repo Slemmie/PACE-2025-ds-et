@@ -1,0 +1,3 @@
+[submodule "3rdparty/json-cpp"]
+	path = 3rdparty/json-cpp
+	url = https://github.com/Slemmie/json-cpp.git
