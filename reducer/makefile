@@ -1,7 +1,7 @@
 SRC = src
 
 CXX = g++
-CXX_FLAGS = -std=c++23 -Wshadow -Wall -Wfatal-errors
+CXX_FLAGS = -std=c++23 -Wshadow -Wall -Wfatal-errors -Werror
 CXX_FLAGS_REL = $(CXX_FLAGS) -O2
 CXX_FLAGS_DBG = $(CXX_FLAGS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG
 

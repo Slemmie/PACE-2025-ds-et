@@ -12,6 +12,7 @@
 #include <vector>
 #include <unordered_set>
 #include <string>
+#include <functional>
 
 class Instance {
 
@@ -27,6 +28,8 @@ public:
 
 	void insert_W(size_t v);
 	void insert_D(size_t v);
+	void insert_dead_into_D(size_t v); // be careful
+	void remove_from_D(size_t v); // be careful, does not update neighbor W status!
 	void erase(size_t v);
 	size_t insert();
 	void delete_edge(size_t u, size_t v);
@@ -41,6 +44,9 @@ public:
 	std::string solution() const;
 
 	std::string current_graph_string() const;
+
+	void add_adjusting_callback(std::function <void (Instance&)> fn);
+	void clear_adjusting_callbacks();
 
 private:
 
@@ -65,5 +71,8 @@ private:
 	std::unordered_set <size_t> m_alives;
 	std::vector <bool> m_W;
 	std::vector <bool> m_D;
+
+	// LIFO
+	std::vector <std::function <void (Instance&)>> m_adjusting_callbacks;
 
 };

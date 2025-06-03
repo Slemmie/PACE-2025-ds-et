@@ -26,7 +26,8 @@ void Instance::rollback(size_t checkpoint) {
 				m_W[m_history.back().vertex] = false;
 			}
 			case History_item::Type::D_UPDATE: {
-				m_D[m_history.back().vertex] = false;
+				if (m_D[m_history.back().vertex]) m_D[m_history.back().vertex] = false;
+				else m_D[m_history.back().vertex] = true;
 			}
 			case History_item::Type::VERTEX_ERASE_UPDATE: {
 				m_alives.insert(m_history.back().vertex);
@@ -87,6 +88,36 @@ void Instance::insert_D(size_t v) {
 	erase(v);
 }
 
+void Instance::insert_dead_into_D(size_t v) {
+	if (m_alives.find(v) != m_alives.end()) {
+		throw std::invalid_argument(std::format("attempt to insert (alive) {} into D using Instace::insert_dead_into_D()", v));
+	}
+	if (m_D[v]) {
+		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
+	}
+	m_D[v] = true;
+	m_history.push_back(History_item {
+		.type = History_item::Type::D_UPDATE,
+		.vertex = v
+	});
+	for (size_t nei : m_g[v]) {
+		if (!m_W[nei]) {
+			insert_W(nei);
+		}
+	}
+}
+
+void Instance::remove_from_D(size_t v) {
+	if (!m_D[v]) {
+		throw std::invalid_argument(std::format("attempt to remove {} from D, but {} not in D", v, v));
+	}
+	m_D[v] = false;
+	m_history.push_back(History_item {
+		.type = History_item::Type::D_UPDATE,
+		.vertex = v
+	});
+}
+
 void Instance::erase(size_t v) {
 	if (!m_alives.contains(v)) {
 		throw std::invalid_argument(std::format("attempt to erase {} from graph, but {} already erased", v, v));
@@ -143,7 +174,7 @@ void Instance::add_edge(size_t u, size_t v) {
 		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), but {} is out of bounds", u, v, v));
 	}
 	if (m_g[u].contains(v)) {
-		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), it already not exist", u, v));
+		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), it already exists", u, v));
 	}
 	m_history.push_back(History_item {
 		.type = History_item::Type::EDGE_ADD_UPDATE,
@@ -209,4 +240,15 @@ std::string Instance::current_graph_string() const {
 		oss << u + 1 << " " << v + 1 << "\n";
 	}
 	return oss.str();
+}
+
+void Instance::add_adjusting_callback(std::function <void (Instance&)> fn) {
+	m_adjusting_callbacks.push_back(fn);
+}
+
+void Instance::clear_adjusting_callbacks() {
+	while (!m_adjusting_callbacks.empty()) {
+		m_adjusting_callbacks.back()(*this);
+		m_adjusting_callbacks.pop_back();
+	}
 }

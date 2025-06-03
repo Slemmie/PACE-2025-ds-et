@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <format>
+#include <sstream>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -103,4 +104,36 @@ void LP::Expression::simplify() {
 			terms.push_back(Term { .variable = index, .coefficient = coefficient });
 		}
 	}
+}
+
+std::string LP::to_string() const {
+	std::ostringstream oss;
+	oss << (m_obj_sense == Objective_sense::MINIMIZE ? "MINIMIZE" : "MAXIMIZE");
+	{
+		std::ostringstream coss;
+		coss << " ";
+		for (Term term : m_obj_fun.terms) {
+			coss << term << " + ";
+		}
+		std::string str = coss.str();
+		str.pop_back();
+		str.pop_back();
+		str.pop_back();
+		oss << str;
+	}
+	oss << "\nwhere\n";
+	for (const Expression& e : m_conditions) {
+		if (e.terms.empty()) continue;
+		std::ostringstream coss;
+		for (Term term : e.terms) {
+			coss << term << " + ";
+		}
+		std::string str = coss.str();
+		str.pop_back();
+		str.pop_back();
+		str.pop_back();
+		str += " > 0";
+		oss << str << "\n";
+	}
+	return oss.str();
 }

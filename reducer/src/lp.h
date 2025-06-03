@@ -31,6 +31,8 @@ public:
 	// returns indices of 1-valued variables
 	std::vector <size_t> solve();
 
+	std::string to_string() const;
+
 private:
 
 	Objective_sense m_obj_sense;
