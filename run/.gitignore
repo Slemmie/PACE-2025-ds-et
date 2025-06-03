@@ -1,0 +1,4 @@
+rel
+dbg
+src/**/*__release__.o
+src/**/*__debug__.o
