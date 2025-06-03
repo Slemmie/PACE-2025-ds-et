@@ -17,9 +17,9 @@ cp "ds_verifier/Dominating Set Verifier/src/test/resources/testset/"*.gr ./off_s
 cp "ds_verifier/Dominating Set Verifier/src/test/resources/testset/"*.sol ./off_small/
 rm -rf ./ds_verifier
 
-# prelimenary #50
-rm -rf ./off_50
-mkdir ./off_50
+# prelimenary #100
+rm -rf ./off_100
+mkdir ./off_100
 if [ -d "PACE2025-instances" ]; then
 	echo "cannot complete intermediate step: 'PACE2025-instances' directory already exists"
 	exit 1
@@ -28,6 +28,6 @@ git clone --depth 1 --filter=blob:none --sparse https://github.com/MarioGrobler/
 cd PACE2025-instances
 git sparse-checkout set "ds/exact"
 cd ..
-cp "PACE2025-instances/ds/exact/"*.gr ./off_50/
-cp "PACE2025-instances/ds/exact/"*.sol ./off_50/
+cp "PACE2025-instances/ds/exact/"*.gr ./off_100/
+cp "PACE2025-instances/ds/exact/"*.sol ./off_100/
 rm -rf ./PACE2025-instances
