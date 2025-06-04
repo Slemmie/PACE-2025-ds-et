@@ -3,7 +3,7 @@
 #include "mis_config.h"
 #include "mis_log.h"
 #include "exact_mis.h"
-#include "../../3rdparty/pace-2019-pace-2019/lib/mis/exact_mis.h"
+#include "../../3rdparty/pace-2019/lib/mis/exact_mis.h"
 #include<algorithm>
 #include<set>
 #include<numeric>

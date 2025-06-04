@@ -21,7 +21,7 @@ struct Metrics {
 
 	std::vector <size_t> articulation_point_reductions;
 
-	size_t cut2_missing_gadget_encounters;
+	size_t cut2_missing_gadget_encounters = 0;
 
 	std::vector <size_t> cut2_hits;
 
