@@ -11,9 +11,24 @@
 #include <highs/Highs.h>
 #endif
 
+#ifdef LP_SCIP
+#include <scip/scip.h>
+#include <scip/scipdefplugins.h>
+
+#define SCIPCALL(x) \
+	do { \
+		SCIP_RETCODE _rcode = (x); \
+		if (_rcode != SCIP_OKAY) { \
+			std::cerr << "SCIP error " << _rcode << " at " << __FILE__ << ":" << __LINE__ << std::endl;  \
+			return { }; \
+		} \
+	} while (0)
+#endif
+
 #include <stdexcept>
 #include <format>
 #include <sstream>
+#include <unordered_map>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -177,6 +192,95 @@ std::vector <size_t> LP::solve() {
 		}
 	}
 	return result;
+#else
+#ifdef LP_SCIP
+	SCIP* scip = nullptr;
+
+	SCIPCALL(SCIPcreate(&scip));
+	SCIPCALL(SCIPincludeDefaultPlugins(scip));
+
+	SCIPCALL(SCIPsetIntParam(scip, "display/verblevel", 0));
+
+	SCIPCALL(SCIPcreateProbBasic(scip, "MDS_problem"));
+
+	SCIPCALL(SCIPsetIntParam(scip, "presolving/maxrounds", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/knapsackcover/freq", 10));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/clique/freq", 10));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/clique/maxsepacuts",100));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/aggregation/freq", 10));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/aggregation/maxrounds", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/zerohalf/freq", 10));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/zerohalf/maxrounds", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/oddcycle/freq", 1));
+	SCIPCALL(SCIPsetIntParam(scip, "separating/oddcycle/maxrounds", 10));
+	SCIPCALL(SCIPsetIntParam(scip, "branching/fullstrong/priority", 1000));
+	SCIPCALL(SCIPsetIntParam(scip, "branching/fullstrong/maxdepth", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "branching/relpscost/priority", 50000));
+	SCIPCALL(SCIPsetBoolParam(scip, "branching/relpscost/probingbounds", TRUE));
+	SCIPCALL(SCIPsetIntParam(scip, "heuristics/rounding/freq", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "heuristics/veclendiving/freq", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "heuristics/subnlp/freq", -1));
+	SCIPCALL(SCIPsetIntParam(scip, "heuristics/multistart/freq", -1));
+
+	if (m_obj_sense == Objective_sense::MAXIMIZE) {
+		SCIPCALL(SCIPsetObjsense(scip, SCIP_OBJSENSE_MAXIMIZE));
+	} else {
+		SCIPCALL(SCIPsetObjsense(scip, SCIP_OBJSENSE_MINIMIZE));
+	}
+
+	std::vector <double> obj_coefs(m_num_variables, 0);
+	for (const Term& term : m_obj_fun.terms) {
+		assert(term.variable < m_num_variables);
+		obj_coefs[term.variable] = static_cast <double> (term.coefficient);
+	}
+
+	std::vector <SCIP_VAR*> vars(m_num_variables, nullptr);
+	for (size_t i = 0; i < m_num_variables; i++) {
+		std::string var_name = "x" + std::to_string(i);
+		SCIP_VAR* v = nullptr;
+		SCIPCALL(SCIPcreateVarBasic(scip, &v, var_name.c_str(), 0, 1, obj_coefs[i], SCIP_VARTYPE_BINARY));
+		SCIPCALL(SCIPaddVar(scip, v));
+		vars[i] = v;
+	}
+
+	for (size_t ci = 0; ci < m_conditions.size(); ci++) {
+		const Expression& expr = m_conditions[ci];
+
+		std::vector <SCIP_VAR*> cons_vars;
+		std::vector <double> cons_coefs;
+		cons_vars.reserve(expr.terms.size());
+		cons_coefs.reserve(expr.terms.size());
+
+		for (const Term& term : expr.terms) {
+			assert(term.variable < m_num_variables);
+			cons_vars.push_back(vars[term.variable]);
+			cons_coefs.push_back(static_cast <double> (term.coefficient));
+		}
+
+		std::string cons_name = "c" + std::to_string(ci);
+
+		SCIP_CONS* cons = nullptr;
+		SCIPCALL(SCIPcreateConsBasicLinear(scip, &cons, cons_name.c_str(), static_cast <int> (cons_vars.size()), cons_vars.data(), cons_coefs.data(), 1, SCIPinfinity(scip)));
+		SCIPCALL(SCIPaddCons(scip, cons));
+		SCIPCALL(SCIPreleaseCons(scip, &cons));
+	}
+
+	SCIPCALL(SCIPsolve(scip));
+	SCIP_SOL* sol = SCIPgetBestSol(scip);
+
+	std::vector <size_t> result;
+	if (sol != nullptr) {
+		for (size_t i = 0; i < m_num_variables; i++) {
+			double val = SCIPgetSolVal(scip, sol, vars[i]);
+			if (val > 0.5) result.push_back(i);
+		}
+	}
+
+	for (SCIP_VAR* v : vars) SCIPCALL(SCIPreleaseVar(scip, &v));
+	SCIPCALL(SCIPfree(&scip));
+
+	return result;
+#endif
 #endif
 #endif
 }

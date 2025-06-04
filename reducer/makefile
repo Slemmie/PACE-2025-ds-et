@@ -16,6 +16,7 @@ INCLUDES = $(addprefix -I,$(MIS_INCLUDE_DIRS))
 
 # LP_SOLVER = -DLP_HIGHS
 LP_SOLVER = -DLP_CBC
+# LP_SOLVER = -DLP_SCIP
 
 CXX_FLAGS = -std=c++23 -Wshadow -Wall -Wfatal-errors $(LP_SOLVER) -I /usr/local/include/highs/
 CXX_FLAGS_MIS = -std=c++23 -Wshadow -Wall -Wfatal-errors -fopenmp $(INCLUDES)
@@ -26,7 +27,9 @@ CXX_FLAGS_REL_MIS = $(CXX_FLAGS_MIS) -O2 -static
 CXX_FLAGS_DBG = $(CXX_FLAGS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG
 CXX_FLAGS_DBG_MIS = $(CXX_FLAGS_MIS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG
 
-LNKS = -L/usr/local/lib/ -lhighs -L/usr/lib/x86-64-linux-gnu/ -Wl,--start-group  -lCbcSolver -lCbc -lClp -lCgl -lOsiClp -lOsi -lCoinUtils  -Wl,--end-group -llapack -lblas -lgfortran -lz -lbz2 -fopenmp
+# LNKS = -lscip -lsoplex -lmpfr -lgmp -lglpk -L/usr/local/lib/ -lhighs -L/usr/lib/x86-64-linux-gnu/ -Wl,--start-group  -lCbcSolver -lCbc -lClp -lCgl -lOsiClp -lOsi -lCoinUtils  -Wl,--end-group -llapack -lblas -lgfortran -lz -lbz2 -fopenmp
+# does not work for SCIP or HIGHS:
+LNKS = -L/usr/lib/x86-64-linux-gnu/ -Wl,--start-group  -lCbcSolver -lCbc -lClp -lCgl -lOsiClp -lOsi -lCoinUtils  -Wl,--end-group -llapack -lblas -lgfortran -lz -lbz2 -fopenmp
 
 HDR_FILES = $(shell find $(SRC) -name "*.h") $(shell find $(SRC) -name "*.hpp")
 SRC_FILES = $(shell find $(SRC) -name "*.cpp")
