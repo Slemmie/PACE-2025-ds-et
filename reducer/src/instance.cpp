@@ -8,11 +8,20 @@
 Instance::Instance(const G& g) :
 m_g(g),
 m_W(g.n, false),
+m_D_size(0),
 m_D(g.n, false),
-m_X(g.n, false)
+m_X(g.n, false),
+m_doms(g.n),
+m_covs(g.n)
 {
 	for (size_t v = 0; v < g.n; v++) {
 		m_alives.insert(v);
+		m_doms[v].insert(v);
+		m_covs[v].insert(v);
+		for (size_t nei : g[v]) {
+			m_doms[v].insert(nei);
+			m_covs[v].insert(nei);
+		}
 	}
 }
 
@@ -21,6 +30,10 @@ void Instance::insert_W(size_t v) {
 		throw std::invalid_argument(std::format("attempt to insert {} into W, but {} already in W", v, v));
 	}
 	m_W[v] = true;
+	m_covs[v].erase(v);
+	for (size_t nei : m_g[v]) {
+		m_covs[nei].erase(v);
+	}
 }
 
 void Instance::insert_D(size_t v) {
@@ -30,8 +43,11 @@ void Instance::insert_D(size_t v) {
 	if (m_X[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} is in X", v, v));
 	}
+	m_D_size++;
 	m_D[v] = true;
+	m_covs[v].erase(v);
 	for (size_t nei : m_g[v]) {
+		m_covs[nei].erase(v);
 		if (!m_W[nei]) {
 			insert_W(nei);
 		}
@@ -47,6 +63,10 @@ void Instance::insert_X(size_t v) {
 		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} is in D", v, v));
 	}
 	m_X[v] = true;
+	m_doms[v].erase(v);
+	for (size_t nei : m_g[v]) {
+		m_doms[nei].erase(v);
+	}
 }
 
 void Instance::insert_dead_into_D(size_t v) {
@@ -56,8 +76,11 @@ void Instance::insert_dead_into_D(size_t v) {
 	if (m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
 	}
+	m_D_size++;
 	m_D[v] = true;
+	m_covs[v].erase(v);
 	for (size_t nei : m_g[v]) {
+		m_covs[nei].erase(v);
 		if (!m_W[nei]) {
 			insert_W(nei);
 		}
@@ -68,6 +91,7 @@ void Instance::remove_from_D(size_t v) {
 	if (!m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to remove {} from D, but {} not in D", v, v));
 	}
+	m_D_size--;
 	m_D[v] = false;
 }
 
@@ -78,6 +102,8 @@ void Instance::erase(size_t v) {
 	m_alives.erase(v);
 	std::vector <size_t> to_del;
 	for (size_t nei : m_g[v]) {
+		m_doms[nei].erase(v);
+		m_covs[nei].erase(v);
 		to_del.emplace_back(nei);
 	}
 	for (size_t nei : to_del) {
@@ -90,6 +116,9 @@ size_t Instance::insert() {
 	m_alives.insert(index);
 	m_W.push_back(false);
 	m_D.push_back(false);
+	m_X.push_back(false);
+	m_doms.push_back({ index });
+	m_covs.push_back({ index });
 	return index;
 }
 
@@ -104,6 +133,10 @@ void Instance::delete_edge(size_t u, size_t v) {
 		throw std::invalid_argument(std::format("attempt to delete edge ({}, {}), it does not exist", u, v));
 	}
 	m_g.erase(u, v);
+	m_doms[u].erase(v);
+	m_covs[u].erase(v);
+	m_doms[v].erase(u);
+	m_covs[v].erase(u);
 }
 
 void Instance::add_edge(size_t u, size_t v) {
@@ -117,6 +150,10 @@ void Instance::add_edge(size_t u, size_t v) {
 		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), it already exists", u, v));
 	}
 	m_g.add(u, v);
+	if (!m_X[v]) m_doms[u].insert(v);
+	if (!m_X[u]) m_doms[v].insert(u);
+	if (!m_D[v] && !m_W[v]) m_covs[u].insert(v);
+	if (!m_D[u] && !m_W[u]) m_covs[v].insert(u);
 }
 
 const G& Instance::g() const {
@@ -141,6 +178,18 @@ bool Instance::D(size_t v) const {
 
 bool Instance::X(size_t v) const {
 	return m_X[v];
+}
+
+const std::unordered_set <size_t>& Instance::dom(size_t v) const {
+	return m_doms[v];
+}
+
+const std::unordered_set <size_t>& Instance::cov(size_t v) const {
+	return m_covs[v];
+}
+
+size_t Instance::D_size() const {
+	return m_D_size;
 }
 
 std::string Instance::solution() const {

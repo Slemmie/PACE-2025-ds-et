@@ -2,16 +2,26 @@
 #include "solve.h"
 #include "vertexcover.h"
 
+#include "solution.h"
+#include "BAB.h"
+
 #include <iostream>
 
 int main() {
-	Solver solver;
+	// Solver solver;
+	// Instance instance(G::read(std::cin));
+	//
+	// if(!vertex_cover_solution(instance)) {
+	// 	solver.solve(instance);
+	// 	solver.metrics().log(false);
+	// }
+	//
+	// std::cout << instance.solution();
+
 	Instance instance(G::read(std::cin));
-
-	if(!vertex_cover_solution(instance)) {
-		solver.solve(instance);
-		solver.metrics().log(false);
-	}
-
-	std::cout << instance.solution();
+	Solution solution(instance.g().n);
+	for (size_t i = 0; i < instance.g().n; i++) solution.insert(i);
+	BAB bab;
+	solution = bab.solve(instance, solution);
+	std::cout << solution.solution();
 }
