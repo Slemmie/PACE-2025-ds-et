@@ -34,6 +34,8 @@ LNKS = -L/usr/lib/x86-64-linux-gnu/ -Wl,--start-group  -lCbcSolver -lCbc -lClp -
 HDR_FILES = $(shell find $(SRC) -name "*.h") $(shell find $(SRC) -name "*.hpp")
 SRC_FILES = $(shell find $(SRC) -name "*.cpp")
 
+HDR_FILES_MIS = $(shell find $(MIS_INCLUDE_DIRS) -name "*.h") $(shell find $(MIS_INCLUDE_DIRS) -name "*.hpp")
+
 OBJ_FILES_REL = ${SRC_FILES:%.cpp=%__release__.o}
 OBJ_FILES_DBG = ${SRC_FILES:%.cpp=%__debug__.o}
 
@@ -55,10 +57,10 @@ vcdep:
 %__debug__.o: %.cpp ${HDR_FILES}
 	$(CXX) -c $< -o $@ $(CXX_FLAGS_DBG) $(INCLUDES)
 
-%__release__mis__.o: %.cpp ${HDR_FILES}
+%__release__mis__.o: %.cpp ${HDR_FILES_MIS}
 	$(CXX_MIS) -fPIC -c $< -o $@ $(CXX_FLAGS_REL_MIS)
 
-%__debug__mis__.o: %.cpp ${HDR_FILES}
+%__debug__mis__.o: %.cpp ${HDR_FILES_MIS}
 	$(CXX_MIS) -fPIC -c $< -o $@ $(CXX_FLAGS_DBG_MIS)
 
 librel_mis.a: ${MIS_OBJ_FILES_REL}

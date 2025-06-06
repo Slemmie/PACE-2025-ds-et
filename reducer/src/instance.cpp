@@ -8,56 +8,12 @@
 Instance::Instance(const G& g) :
 m_g(g),
 m_W(g.n, false),
-m_D(g.n, false)
+m_D(g.n, false),
+m_X(g.n, false)
 {
 	for (size_t v = 0; v < g.n; v++) {
 		m_alives.insert(v);
 	}
-}
-
-size_t Instance::current_checkpoint() const {
-	return m_history.size();
-}
-
-void Instance::rollback(size_t checkpoint) {
-	while (m_history.size() > checkpoint) {
-		switch (m_history.back().type) {
-			case History_item::Type::W_UPDATE: {
-				m_W[m_history.back().vertex] = false;
-			}
-			case History_item::Type::D_UPDATE: {
-				if (m_D[m_history.back().vertex]) m_D[m_history.back().vertex] = false;
-				else m_D[m_history.back().vertex] = true;
-			}
-			case History_item::Type::VERTEX_ERASE_UPDATE: {
-				m_alives.insert(m_history.back().vertex);
-				for (auto [u, v] : m_history.back().edges) {
-					m_g.add(u, v);
-				}
-			}
-			case History_item::Type::VERTEX_INSERT_UPDATE: {
-				m_g.pop_vertex();
-				m_alives.erase(m_history.back().vertex);
-				m_W.pop_back();
-				m_D.pop_back();
-			}
-			case History_item::Type::EDGE_DELETE_UPDATE: {
-				m_g.add(m_history.back().edges[0].first, m_history.back().edges[0].second);
-			}
-			case History_item::Type::EDGE_ADD_UPDATE: {
-				m_g.erase(m_history.back().edges[0].first, m_history.back().edges[0].second);
-			}
-		}
-		m_history.pop_back();
-	}
-}
-
-bool Instance::is_restored() const {
-	return m_history.empty();
-}
-
-void Instance::restore() {
-	rollback(0);
 }
 
 void Instance::insert_W(size_t v) {
@@ -65,27 +21,32 @@ void Instance::insert_W(size_t v) {
 		throw std::invalid_argument(std::format("attempt to insert {} into W, but {} already in W", v, v));
 	}
 	m_W[v] = true;
-	m_history.push_back(History_item {
-		.type = History_item::Type::W_UPDATE,
-		.vertex = v
-	});
 }
 
 void Instance::insert_D(size_t v) {
 	if (m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
 	}
+	if (m_X[v]) {
+		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} is in X", v, v));
+	}
 	m_D[v] = true;
-	m_history.push_back(History_item {
-		.type = History_item::Type::D_UPDATE,
-		.vertex = v
-	});
 	for (size_t nei : m_g[v]) {
 		if (!m_W[nei]) {
 			insert_W(nei);
 		}
 	}
 	erase(v);
+}
+
+void Instance::insert_X(size_t v) {
+	if (m_X[v]) {
+		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} already in X", v, v));
+	}
+	if (m_D[v]) {
+		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} is in D", v, v));
+	}
+	m_X[v] = true;
 }
 
 void Instance::insert_dead_into_D(size_t v) {
@@ -96,10 +57,6 @@ void Instance::insert_dead_into_D(size_t v) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
 	}
 	m_D[v] = true;
-	m_history.push_back(History_item {
-		.type = History_item::Type::D_UPDATE,
-		.vertex = v
-	});
 	for (size_t nei : m_g[v]) {
 		if (!m_W[nei]) {
 			insert_W(nei);
@@ -112,10 +69,6 @@ void Instance::remove_from_D(size_t v) {
 		throw std::invalid_argument(std::format("attempt to remove {} from D, but {} not in D", v, v));
 	}
 	m_D[v] = false;
-	m_history.push_back(History_item {
-		.type = History_item::Type::D_UPDATE,
-		.vertex = v
-	});
 }
 
 void Instance::erase(size_t v) {
@@ -123,13 +76,8 @@ void Instance::erase(size_t v) {
 		throw std::invalid_argument(std::format("attempt to erase {} from graph, but {} already erased", v, v));
 	}
 	m_alives.erase(v);
-	m_history.push_back(History_item {
-		.type = History_item::Type::VERTEX_ERASE_UPDATE,
-		.vertex = v
-	});
 	std::vector <size_t> to_del;
 	for (size_t nei : m_g[v]) {
-		m_history.back().edges.emplace_back(v, nei);
 		to_del.emplace_back(nei);
 	}
 	for (size_t nei : to_del) {
@@ -139,10 +87,6 @@ void Instance::erase(size_t v) {
 
 size_t Instance::insert() {
 	size_t index = m_g.add_vertex();
-	m_history.push_back(History_item {
-		.type = History_item::Type::VERTEX_INSERT_UPDATE,
-		.vertex = index
-	});
 	m_alives.insert(index);
 	m_W.push_back(false);
 	m_D.push_back(false);
@@ -159,10 +103,6 @@ void Instance::delete_edge(size_t u, size_t v) {
 	if (!m_g[u].contains(v)) {
 		throw std::invalid_argument(std::format("attempt to delete edge ({}, {}), it does not exist", u, v));
 	}
-	m_history.push_back(History_item {
-		.type = History_item::Type::EDGE_DELETE_UPDATE,
-		.edges = { { u, v } }
-	});
 	m_g.erase(u, v);
 }
 
@@ -176,10 +116,6 @@ void Instance::add_edge(size_t u, size_t v) {
 	if (m_g[u].contains(v)) {
 		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), it already exists", u, v));
 	}
-	m_history.push_back(History_item {
-		.type = History_item::Type::EDGE_ADD_UPDATE,
-		.edges = { { u, v } }
-	});
 	m_g.add(u, v);
 }
 
@@ -201,6 +137,10 @@ bool Instance::W(size_t v) const {
 
 bool Instance::D(size_t v) const {
 	return m_D[v];
+}
+
+bool Instance::X(size_t v) const {
+	return m_X[v];
 }
 
 std::string Instance::solution() const {
