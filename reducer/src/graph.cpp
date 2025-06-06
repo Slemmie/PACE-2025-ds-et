@@ -83,7 +83,8 @@ G G::read(std::istream& inf) {
 				size_t u, v;
 				std::istringstream edge_stream(line);
 				if (edge_stream >> u >> v) {
-					ed.emplace_back(--u, --v);
+					if (u != v)
+						ed.emplace_back(--u, --v);
 				} else {
 					throw std::invalid_argument(std::format("failed to interpret line: '{}'", line));
 				}

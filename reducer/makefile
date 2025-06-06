@@ -21,8 +21,8 @@ LP_SOLVER = -DLP_CBC
 CXX_FLAGS = -std=c++23 -Wshadow -Wall -Wfatal-errors $(LP_SOLVER) -I /usr/local/include/highs/
 CXX_FLAGS_MIS = -std=c++23 -Wshadow -Wall -Wfatal-errors -fopenmp $(INCLUDES)
 
-CXX_FLAGS_REL = $(CXX_FLAGS) -O2 -static
-CXX_FLAGS_REL_MIS = $(CXX_FLAGS_MIS) -O2 -static
+CXX_FLAGS_REL = $(CXX_FLAGS) -O3 -static
+CXX_FLAGS_REL_MIS = $(CXX_FLAGS_MIS) -O3 -static
 
 CXX_FLAGS_DBG = $(CXX_FLAGS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG
 CXX_FLAGS_DBG_MIS = $(CXX_FLAGS_MIS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG
