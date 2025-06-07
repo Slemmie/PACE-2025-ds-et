@@ -20,17 +20,11 @@ public:
 
 	Instance(const G& g);
 
-	size_t current_checkpoint() const;
-	void rollback(size_t checkpoint);
-
-	bool is_restored() const;
-	void restore();
-
-	void insert_X(size_t v);
 	void insert_W(size_t v);
 	void insert_D(size_t v);
+	void insert_X(size_t v);
 	void insert_dead_into_D(size_t v); // be careful
-	void remove_from_D(size_t v); // be careful, does not update neighbor W status!
+	void remove_from_D(size_t v); // be careful, does not update neighbor W/covs status!
 	void erase(size_t v);
 	size_t insert();
 	void delete_edge(size_t u, size_t v);
@@ -41,9 +35,14 @@ public:
 	const std::unordered_set <size_t>& alives() const;
 	const std::unordered_set <size_t>& undetermined() const;
 	const std::unordered_set <size_t>& undominated() const;
-	bool X(size_t v) const;
 	bool W(size_t v) const;
 	bool D(size_t v) const;
+	bool X(size_t v) const;
+
+	const std::unordered_set <size_t>& dom(size_t v) const; // u in dom -> u is undecided and (closed) neighbor to v
+	const std::unordered_set <size_t>& cov(size_t v) const; // u in cov -> u is undominated and (closed) neighbor to v
+
+	size_t D_size() const;
 
 	std::string solution() const;
 
@@ -54,30 +53,15 @@ public:
 
 private:
 
-	struct History_item {
-		enum class Type {
-			W_UPDATE,
-			D_UPDATE,
-			VERTEX_ERASE_UPDATE,
-			VERTEX_INSERT_UPDATE,
-			EDGE_DELETE_UPDATE,
-			EDGE_ADD_UPDATE
-		} type;
-		size_t vertex;
-		std::vector <std::pair <size_t, size_t>> edges;
-	};
-
-	std::vector <History_item> m_history;
-
-private:
-
 	G m_g;
 	std::unordered_set <size_t> m_alives;
 	std::unordered_set <size_t> m_undetermined;
 	std::unordered_set <size_t> m_undominated;
-	std::vector <bool> m_X;
 	std::vector <bool> m_W;
+	size_t m_D_size;
 	std::vector <bool> m_D;
+	std::vector <bool> m_X;
+	std::vector <std::unordered_set <size_t>> m_doms, m_covs;
 
 	// LIFO
 	std::vector <std::function <void (Instance&)>> m_adjusting_callbacks;

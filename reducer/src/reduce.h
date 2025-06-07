@@ -1,5 +1,9 @@
-// #pragma once
-//
-// #include "instance.h"
-//
-// void reduce(Instance& instance, bool root_rec = true, size_t art_rec_left = 1);
+#pragma once
+
+#include "instance.h"
+
+bool rule_1(Instance& instance);
+bool rule_2(Instance& instance);
+bool rule_3(Instance& instance);
+
+void reduce(Instance& instance);

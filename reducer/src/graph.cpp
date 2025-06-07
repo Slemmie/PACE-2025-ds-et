@@ -4,7 +4,7 @@
 #include <format>
 #include <stdexcept>
 
-G::G(size_t _n, size_t _m) : n(_n), m(_m), adj(_n), coverages(_n), dominators(_n) { }
+G::G(size_t _n, size_t _m) : n(_n), m(_m), adj(_n) { }
 
 void G::add(size_t u, size_t v) {
 	if (u == v) {
@@ -15,29 +15,7 @@ void G::add(size_t u, size_t v) {
 	}
 	adj[u].insert(v);
 	adj[v].insert(u);
-	coverages[u].insert(v);
-	coverages[v].insert(u);
-	coverages[u].insert(u);
-	coverages[v].insert(v);
-	dominators[u].insert(v);
-	dominators[v].insert(u);
-	dominators[u].insert(u);
-	dominators[v].insert(v);
 	m++;
-}
-
-void G::erase_coverages(size_t u, size_t v) {
-	//if(!coverages[u].contains(v)) {
-	//	throw std::invalid_argument(std::format("attempt to erase coverages ({}, {}) from graph, but it doesn't exist", u, v));
-	//}
-	coverages[u].erase(v);
-}
-
-void G::erase_dominators(size_t u, size_t v) {
-	//if(!dominators[u].contains(v)) {
-	//	throw std::invalid_argument(std::format("attempt to erase dominator ({}, {}) from graph, but it doesn't exist", u, v));
-	//}
-	dominators[u].erase(v);
 }
 
 void G::erase(size_t u, size_t v) {
@@ -46,14 +24,6 @@ void G::erase(size_t u, size_t v) {
 	}
 	adj[u].erase(v);
 	adj[v].erase(u);
-	coverages[u].erase(v);
-	coverages[v].erase(u);
-	coverages[u].erase(u);
-	coverages[v].erase(v);
-	dominators[u].erase(v);
-	dominators[v].erase(u);
-	dominators[u].erase(u);
-	dominators[v].erase(v);
 	m--;
 }
 
@@ -61,8 +31,6 @@ size_t G::add_vertex() {
 	size_t index = n;
 	n++;
 	adj.resize(n);
-	coverages.resize(n);
-	dominators.resize(n);
 	return index;
 }
 
@@ -72,8 +40,6 @@ void G::pop_vertex() {
 	}
 	n--;
 	adj.pop_back();
-	coverages.pop_back();
-	dominators.pop_back();
 }
 
 const std::unordered_set <size_t>& G::operator [] (size_t index) const {
@@ -117,7 +83,8 @@ G G::read(std::istream& inf) {
 				size_t u, v;
 				std::istringstream edge_stream(line);
 				if (edge_stream >> u >> v) {
-					ed.emplace_back(--u, --v);
+					if (u != v)
+						ed.emplace_back(--u, --v);
 				} else {
 					throw std::invalid_argument(std::format("failed to interpret line: '{}'", line));
 				}
