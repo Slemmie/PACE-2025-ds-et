@@ -7,11 +7,14 @@
 
 Instance::Instance(const G& g) :
 m_g(g),
+m_X(g.n, false),
 m_W(g.n, false),
 m_D(g.n, false)
 {
 	for (size_t v = 0; v < g.n; v++) {
 		m_alives.insert(v);
+		m_undetermined.insert(v);
+		m_undominated.insert(v);
 	}
 }
 
@@ -60,11 +63,35 @@ void Instance::restore() {
 	rollback(0);
 }
 
+void Instance::insert_X(size_t v) {
+	if (m_X[v]) {
+		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} already in X", v, v));
+	}
+	m_X[v] = true;
+	m_undetermined.erase(v);
+
+	std::vector <size_t> to_del = {v};
+	for (size_t nei : m_g.dominators[v]) {
+		to_del.emplace_back(nei);
+	}
+	for (size_t nei : to_del) {
+		m_g.erase_dominators(nei, v);
+	}
+}
+
 void Instance::insert_W(size_t v) {
 	if (m_W[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into W, but {} already in W", v, v));
 	}
 	m_W[v] = true;
+	m_undominated.erase(v);
+	std::vector <size_t> to_del = {v};
+	for (size_t nei : m_g.coverages[v]) {
+		to_del.emplace_back(nei);
+	}
+	for (size_t nei : to_del) {
+		m_g.erase_coverages(nei, v);
+	}
 	m_history.push_back(History_item {
 		.type = History_item::Type::W_UPDATE,
 		.vertex = v
@@ -123,6 +150,8 @@ void Instance::erase(size_t v) {
 		throw std::invalid_argument(std::format("attempt to erase {} from graph, but {} already erased", v, v));
 	}
 	m_alives.erase(v);
+	m_undetermined.erase(v);
+	m_undominated.erase(v);
 	m_history.push_back(History_item {
 		.type = History_item::Type::VERTEX_ERASE_UPDATE,
 		.vertex = v
@@ -144,6 +173,9 @@ size_t Instance::insert() {
 		.vertex = index
 	});
 	m_alives.insert(index);
+	m_undetermined.insert(index);
+	m_undominated.insert(index);
+	m_X.push_back(false);
 	m_W.push_back(false);
 	m_D.push_back(false);
 	return index;
@@ -193,6 +225,18 @@ bool Instance::alive(size_t v) const {
 
 const std::unordered_set <size_t>& Instance::alives() const {
 	return m_alives;
+}
+
+const std::unordered_set <size_t>& Instance::undetermined() const {
+	return m_undetermined;
+}
+
+const std::unordered_set <size_t>& Instance::undominated() const {
+	return m_undominated;
+}
+
+bool Instance::X(size_t v) const {
+	return m_X[v];
 }
 
 bool Instance::W(size_t v) const {

@@ -26,6 +26,7 @@ public:
 	bool is_restored() const;
 	void restore();
 
+	void insert_X(size_t v);
 	void insert_W(size_t v);
 	void insert_D(size_t v);
 	void insert_dead_into_D(size_t v); // be careful
@@ -38,6 +39,9 @@ public:
 	const G& g() const;
 	bool alive(size_t v) const;
 	const std::unordered_set <size_t>& alives() const;
+	const std::unordered_set <size_t>& undetermined() const;
+	const std::unordered_set <size_t>& undominated() const;
+	bool X(size_t v) const;
 	bool W(size_t v) const;
 	bool D(size_t v) const;
 
@@ -69,6 +73,9 @@ private:
 
 	G m_g;
 	std::unordered_set <size_t> m_alives;
+	std::unordered_set <size_t> m_undetermined;
+	std::unordered_set <size_t> m_undominated;
+	std::vector <bool> m_X;
 	std::vector <bool> m_W;
 	std::vector <bool> m_D;
 
