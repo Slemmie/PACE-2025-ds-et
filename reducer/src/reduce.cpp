@@ -30,6 +30,7 @@ bool rule_2(Instance& instance) { // O(n)
 			if(first){
 				subset_coverage = instance.g()[v];
 				subset_coverage.insert(v);
+				subset_coverage.erase(u);
 				first = 0;
 			}
 			else {
@@ -41,8 +42,9 @@ bool rule_2(Instance& instance) { // O(n)
 					subset_coverage.erase(val);
 				}
 			}
+			if(!subset_coverage.size())break;
 		}
-		if(subset_coverage.size() > 1) {
+		if(subset_coverage.size()) {
 			to_X.emplace_back(u);
 			found = 1;
 		}
@@ -64,6 +66,7 @@ bool rule_3(Instance& instance) { // O(n)
 			if(first){
 				ignorable_vertices = instance.g()[v];
 				ignorable_vertices.insert(v);
+				ignorable_vertices.erase(u);
 				first = 0;
 			}
 			else {
@@ -75,9 +78,10 @@ bool rule_3(Instance& instance) { // O(n)
 					ignorable_vertices.erase(val);
 				}
 			}
+			if(!ignorable_vertices.size())break;
 		}
 		for (size_t v : ignorable_vertices) {
-			if(u != v && !instance.W(v)) to_W.insert(v);
+			if(!instance.W(v)) to_W.insert(v);
 		}
 	}
 	if(to_W.size()) {

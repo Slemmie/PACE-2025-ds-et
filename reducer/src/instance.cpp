@@ -121,7 +121,6 @@ size_t Instance::insert() {
 	m_alives.insert(index);
 	m_undetermined.insert(index);
 	m_undominated.insert(index);
-	m_X.push_back(false);
 	m_W.push_back(false);
 	m_D.push_back(false);
 	m_X.push_back(false);
