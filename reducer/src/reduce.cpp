@@ -63,7 +63,13 @@ void Reducer::reduce(Instance& instance) {
 			return reduced;
 		};
 
-		perform_ABC();
+		{
+			bool both = true;
+			while (both) {
+				both &= perform_ABC();
+				both &= perform_trivials();
+			}
+		}
 
 		m_branch_by_disconnected_components(instance); // the largest one is reduced below, the rest have been branched by and will not be reduced further
 
@@ -96,6 +102,7 @@ void Reducer::reduce(Instance& instance) {
 			while (m_rule1_step(instance)) m_metrics.rule1_steps++, stop = false;
 			while (m_rule2_step(instance)) m_metrics.rule2_steps++, stop = false;
 			if (perform_trivials()) stop = false;
+			if (perform_ABC()) stop = false;
 		}
 
 		if (m_cut_rules_recs > 0 && m_articulation_point_rule_step(instance)) continue;
