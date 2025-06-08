@@ -1,9 +1,8 @@
 #include "instance.h"
-#include "solve.h"
-#include "vertexcover.h"
-
 #include "solution.h"
 #include "BAB.h"
+#include "vertexcover.h"
+
 
 #include <iostream>
 

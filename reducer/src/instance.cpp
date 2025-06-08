@@ -22,6 +22,7 @@ m_covs(g.n)
 			m_doms[v].insert(nei);
 			m_covs[v].insert(nei);
 		}
+		m_nX.insert(v);
 	}
 }
 
@@ -52,8 +53,11 @@ void Instance::insert_D(size_t v) {
 			insert_W(nei);
 		}
 	}
+	m_nX.erase(v);
 	erase(v);
 }
+
+#include <cassert> /// TEMP
 
 void Instance::insert_X(size_t v) {
 	if (m_X[v]) {
@@ -62,11 +66,14 @@ void Instance::insert_X(size_t v) {
 	if (m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} is in D", v, v));
 	}
+	m_nX.erase(v);
 	m_X[v] = true;
 	m_doms[v].erase(v);
 	for (size_t nei : m_g[v]) {
 		m_doms[nei].erase(v);
+		if (m_doms[nei].empty() && !m_W[nei]) assert(false && "here");
 	}
+	if (m_doms[v].empty() && !m_W[v]) assert(false && "here!");
 }
 
 void Instance::insert_dead_into_D(size_t v) {
@@ -99,6 +106,7 @@ void Instance::erase(size_t v) {
 	if (!m_alives.contains(v)) {
 		throw std::invalid_argument(std::format("attempt to erase {} from graph, but {} already erased", v, v));
 	}
+	m_nX.erase(v);
 	m_alives.erase(v);
 	std::vector <size_t> to_del;
 	for (size_t nei : m_g[v]) {
@@ -108,6 +116,7 @@ void Instance::erase(size_t v) {
 	}
 	for (size_t nei : to_del) {
 		m_g.erase(v, nei);
+		if (m_doms[nei].empty() && !m_W[nei] && m_X[nei]) assert(false && "here!!");
 	}
 }
 
@@ -119,6 +128,7 @@ size_t Instance::insert() {
 	m_X.push_back(false);
 	m_doms.push_back({ index });
 	m_covs.push_back({ index });
+	m_nX.insert(index);
 	return index;
 }
 
@@ -137,6 +147,8 @@ void Instance::delete_edge(size_t u, size_t v) {
 	m_covs[u].erase(v);
 	m_doms[v].erase(u);
 	m_covs[v].erase(u);
+	if (m_doms[u].empty() && !m_W[u] && m_X[u]) assert(false && "here!!!");
+	if (m_doms[v].empty() && !m_W[v] && m_X[v]) assert(false && "here!!!!");
 }
 
 void Instance::add_edge(size_t u, size_t v) {
@@ -188,8 +200,20 @@ const std::unordered_set <size_t>& Instance::cov(size_t v) const {
 	return m_covs[v];
 }
 
+const std::unordered_set <size_t>& Instance::nX() const {
+	return m_nX;
+}
+
 size_t Instance::D_size() const {
 	return m_D_size;
+}
+
+bool Instance::can_insert_X(size_t v) const {
+	for (size_t nei : m_g[v]) {
+		if (m_doms[nei].size() == 1 && *m_doms[nei].begin() == v && !m_W[nei]) return false;
+	}
+	if (m_doms[v].size() == 1 && !m_W[v]) return false;
+	return true;
 }
 
 std::string Instance::solution() const {

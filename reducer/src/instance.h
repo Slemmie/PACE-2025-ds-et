@@ -40,7 +40,11 @@ public:
 	const std::unordered_set <size_t>& dom(size_t v) const; // u in dom -> u is undecided and (closed) neighbor to v
 	const std::unordered_set <size_t>& cov(size_t v) const; // u in cov -> u is undominated and (closed) neighbor to v
 
+	const std::unordered_set <size_t>& nX() const; // all alive vertices not in X
+
 	size_t D_size() const;
+
+	bool can_insert_X(size_t v) const;
 
 	std::string solution() const;
 
@@ -58,6 +62,7 @@ private:
 	std::vector <bool> m_D;
 	std::vector <bool> m_X;
 	std::vector <std::unordered_set <size_t>> m_doms, m_covs;
+	std::unordered_set <size_t> m_nX;
 
 	// LIFO
 	std::vector <std::function <void (Instance&)>> m_adjusting_callbacks;
