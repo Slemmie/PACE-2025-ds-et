@@ -11,19 +11,19 @@ Solution BAB::solve(Instance instance, Solution best_solution) {
 	// reduce (should also prune lone white components)
 	// ...
 	/// TEMP BEGIN
-	//{
-	//	std::vector <size_t> to_del;
-	//	for (size_t v : instance.alives()) {
-	//		if (!instance.W(v)) continue;
-	//		bool all_nei_W = true;
-	//		for (size_t nei : instance.g()[v]) {
-	//			all_nei_W &= instance.W(nei);
-	//		}
-	//		if (!all_nei_W) continue;
-	//		to_del.push_back(v);
-	//	}
-	//	for (size_t v : to_del) instance.erase(v);
-	//}
+	{
+		std::vector <size_t> to_del;
+		for (size_t v : instance.alives()) {
+			if (!instance.W(v)) continue;
+			bool all_nei_W = true;
+			for (size_t nei : instance.g()[v]) {
+				all_nei_W &= instance.W(nei);
+			}
+			if (!all_nei_W) continue;
+			to_del.push_back(v);
+		}
+		for (size_t v : to_del) instance.erase(v);
+	}
 	/// TEMP END
 	if (instance.alives().empty()) {
 		// instance is fully reduced, if it encapsulates a superior solution, return that instead

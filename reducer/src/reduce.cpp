@@ -23,13 +23,20 @@ bool rule_1(Instance& instance) { // O(n)
 bool rule_2(Instance& instance) { // O(n)
 	bool found = 0;
 	std::vector <size_t> to_X;
+	std::unordered_set <size_t> lazy_determined;
 	for (size_t u : instance.undetermined()) {
 		bool first = 1;
-	  	std::unordered_set <size_t> subset_coverage;
+		std::unordered_set <size_t> subset_coverage;
 		for (size_t v : instance.cov(u)) {
 			if(first){
-				subset_coverage = instance.g()[v];
-				subset_coverage.insert(v);
+				for (size_t w : instance.g()[v]) {
+					if (instance.undetermined().contains(w) && !lazy_determined.contains(w)) {
+						subset_coverage.insert(w);
+					}
+				}
+				if (instance.undetermined().contains(v) && !lazy_determined.contains(v)) {
+					subset_coverage.insert(v);
+				}
 				subset_coverage.erase(u);
 				first = 0;
 			}
@@ -44,9 +51,11 @@ bool rule_2(Instance& instance) { // O(n)
 			}
 			if(!subset_coverage.size())break;
 		}
-		if(subset_coverage.size()) {
+		if (!subset_coverage.empty()) {
 			to_X.emplace_back(u);
+			lazy_determined.insert(u);
 			found = 1;
+			break;
 		}
 	}
 	for (size_t u : to_X){
@@ -59,13 +68,20 @@ bool rule_2(Instance& instance) { // O(n)
 bool rule_3(Instance& instance) { // O(n)
 	bool found = 0;
 	std::unordered_set <size_t> to_W;
+	std::unordered_set <size_t> lazy_dominated;
 	for (size_t u : instance.undominated()) {
 		bool first = 1;
 		std::unordered_set <size_t> ignorable_vertices;
 		for (size_t v : instance.dom(u)) {
 			if(first){
-				ignorable_vertices = instance.g()[v];
-				ignorable_vertices.insert(v);
+				for (size_t w : instance.g()[v]) {
+					if (instance.undominated().contains(w) && !lazy_dominated.contains(w)) {
+						ignorable_vertices.insert(w);
+					}
+				}
+				if (instance.undominated().contains(v) && !lazy_dominated.contains(v)) {
+					ignorable_vertices.insert(v);
+				}
 				ignorable_vertices.erase(u);
 				first = 0;
 			}
@@ -81,7 +97,10 @@ bool rule_3(Instance& instance) { // O(n)
 			if(!ignorable_vertices.size())break;
 		}
 		for (size_t v : ignorable_vertices) {
-			if(!instance.W(v)) to_W.insert(v);
+			if(!instance.W(v)) {
+				to_W.insert(v);
+				lazy_dominated.insert(u);
+			}
 		}
 	}
 	if(to_W.size()) {
