@@ -23,8 +23,6 @@ public:
 	void insert_W(size_t v);
 	void insert_D(size_t v);
 	void insert_X(size_t v);
-	void insert_dead_into_D(size_t v); // be careful
-	void remove_from_D(size_t v); // be careful, does not update neighbor W/covs status!
 	void erase(size_t v);
 	size_t insert();
 	void delete_edge(size_t u, size_t v);

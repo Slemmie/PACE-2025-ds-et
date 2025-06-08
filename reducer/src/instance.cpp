@@ -77,36 +77,12 @@ void Instance::insert_X(size_t v) {
 	}
 }
 
-void Instance::insert_dead_into_D(size_t v) {
-	if (m_alives.find(v) != m_alives.end()) {
-		throw std::invalid_argument(std::format("attempt to insert (alive) {} into D using Instace::insert_dead_into_D()", v));
-	}
-	if (m_D[v]) {
-		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
-	}
-	m_D_size++;
-	m_D[v] = true;
-	m_covs[v].erase(v);
-	for (size_t nei : m_g[v]) {
-		m_covs[nei].erase(v);
-		if (!m_W[nei]) {
-			insert_W(nei);
-		}
-	}
-}
-
-void Instance::remove_from_D(size_t v) {
-	if (!m_D[v]) {
-		throw std::invalid_argument(std::format("attempt to remove {} from D, but {} not in D", v, v));
-	}
-	m_D_size--;
-	m_D[v] = false;
-}
-
 void Instance::erase(size_t v) {
 	if (!m_alives.contains(v)) {
 		throw std::invalid_argument(std::format("attempt to erase {} from graph, but {} already erased", v, v));
 	}
+	m_undetermined.erase(v);
+	m_undominated.erase(v);
 	m_nX.erase(v);
 	m_alives.erase(v);
 	std::vector <size_t> to_del;
