@@ -15,5 +15,7 @@ int main() {
 		solution = bab.solve(instance, solution);
 		bab.metrics().log(false);
 		std::cout << solution.solution();
+	} else {
+		std::cout << instance.solution();
 	}
 }
