@@ -14,15 +14,15 @@ size_t lower_bound(const Instance& instance) {
 	RLP::Expression obj_fun;
 	std::vector <RLP::Expression> conditions;
 	for (size_t v : instance.alives()) {
-		if (instance.X(v)) continue;
-		obj_fun.terms.push_back(RLP::Term { .variable = cc[v], .coefficient = 1 });
+		if (!instance.X(v)) obj_fun.terms.push_back(RLP::Term { .variable = cc[v], .coefficient = 1 });
 		if (instance.W(v)) continue;
 		RLP::Expression condition;
-		condition.terms.push_back(RLP::Term { .variable = cc[v], .coefficient = 1 });
+		if (!instance.X(v)) condition.terms.push_back(RLP::Term { .variable = cc[v], .coefficient = 1 });
 		for (size_t nei : instance.g()[v]) {
 			if (instance.X(nei)) continue;
 			condition.terms.push_back(RLP::Term { .variable = cc[nei], .coefficient = 1 });
 		}
+		if (condition.terms.empty()) continue;
 		conditions.push_back(condition);
 	}
 	if (conditions.empty()) return 0;
