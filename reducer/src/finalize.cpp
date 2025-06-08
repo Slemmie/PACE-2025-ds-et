@@ -10,19 +10,22 @@ void finalize(Instance& instance) {
 	// std::cerr << "DEBUG: finalizing " << instance.alives().size() << " vertices" << std::endl;
 	std::unordered_map <size_t, size_t> cc, icc;
 	for (size_t v : instance.alives()) {
+		if (instance.X(v)) continue;
 		cc[v] = cc.size();
 		icc[cc[v]] = v;
 	}
 	LP::Expression obj_fun;
 	std::vector <LP::Expression> conditions;
 	for (size_t v : instance.alives()) {
-		obj_fun.terms.push_back(LP::Term { .variable = cc[v], .coefficient = 1 });
+		if (!instance.X(v)) obj_fun.terms.push_back(LP::Term { .variable = cc[v], .coefficient = 1 });
 		if (instance.W(v)) continue;
 		LP::Expression condition;
-		condition.terms.push_back(LP::Term { .variable = cc[v], .coefficient = 1 });
+		if (!instance.X(v)) condition.terms.push_back(LP::Term { .variable = cc[v], .coefficient = 1 });
 		for (size_t nei : instance.g()[v]) {
+			if (instance.X(nei)) continue;
 			condition.terms.push_back(LP::Term { .variable = cc[nei], .coefficient = 1 });
 		}
+		if (condition.terms.empty()) continue;
 		conditions.push_back(condition);
 	}
 	if (conditions.empty()) {
