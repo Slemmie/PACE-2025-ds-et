@@ -3,6 +3,10 @@
 #include <vector>
 
 struct Metrics {
+	size_t rule_A = 0;
+	size_t rule_B = 0;
+	size_t rule_C = 0;
+
 	size_t rule1_steps = 0;
 	size_t rule1_deletions = 0;
 

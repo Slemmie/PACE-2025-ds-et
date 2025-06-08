@@ -35,6 +35,10 @@ private:
 
 private:
 
+	bool m_rule_A(Instance& instance);
+	bool m_rule_B(Instance& instance);
+	bool m_rule_C(Instance& instance);
+
 	bool m_rule1_step(Instance& instance);
 	bool m_rule2_step(Instance& instance);
 	bool m_articulation_point_rule_step(Instance& instance);

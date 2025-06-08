@@ -6,6 +6,9 @@
 void Metrics::log(bool include_stderr) const {
 	std::ostringstream oss;
 
+	oss << "c vertices influenced by rule A: " << rule_A << "\n";
+	oss << "c vertices influenced by rule B: " << rule_B << "\n";
+	oss << "c vertices influenced by rule C: " << rule_C << "\n";
 	oss << "c rule 1 steps: " << rule1_steps << ", deleted " << rule1_deletions << " total vertices\n";
 	oss << "c rule 2 steps: " << rule2_steps << ", deleted " << rule2_deletions << " total vertices (added "
 		<< rule2_additions_vertices << " vertices and " << rule2_additions_edges << " edges)\n";
@@ -41,6 +44,9 @@ void Metrics::log(bool include_stderr) const {
 }
 
 void Metrics::add(const Metrics& metrics) {
+	rule_A += metrics.rule_A;
+	rule_B += metrics.rule_B;
+	rule_C += metrics.rule_C;
 	rule1_steps += metrics.rule1_steps;
 	rule1_deletions += metrics.rule1_deletions;
 	rule2_steps += metrics.rule2_steps;

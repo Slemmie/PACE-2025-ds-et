@@ -50,6 +50,21 @@ void Reducer::reduce(Instance& instance) {
 
 		perform_trivials();
 
+		auto perform_ABC = [&] () -> bool {
+			bool reduced = false;
+			bool stop = false;
+			while (!stop) {
+				stop = true;
+				if (m_rule_A(instance)) stop = false;
+				if (m_rule_B(instance)) stop = false;
+				if (m_rule_C(instance)) stop = false;
+				reduced |= !stop;
+			}
+			return reduced;
+		};
+
+		perform_ABC();
+
 		m_branch_by_disconnected_components(instance); // the largest one is reduced below, the rest have been branched by and will not be reduced further
 
 		m_d3.clear();

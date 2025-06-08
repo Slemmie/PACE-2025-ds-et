@@ -16,6 +16,8 @@ m_covs(g.n)
 {
 	for (size_t v = 0; v < g.n; v++) {
 		m_alives.insert(v);
+		m_undetermined.insert(v);
+		m_undominated.insert(v);
 		m_doms[v].insert(v);
 		m_covs[v].insert(v);
 		for (size_t nei : g[v]) {
@@ -30,6 +32,7 @@ void Instance::insert_W(size_t v) {
 	if (m_W[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into W, but {} already in W", v, v));
 	}
+	m_undominated.erase(v);
 	m_W[v] = true;
 	m_covs[v].erase(v);
 	for (size_t nei : m_g[v]) {
@@ -44,11 +47,12 @@ void Instance::insert_D(size_t v) {
 	if (m_X[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} is in X", v, v));
 	}
+	m_undetermined.erase(v);
+	m_undominated.erase(v);
 	m_D_size++;
 	m_D[v] = true;
-	m_covs[v].erase(v);
 	for (size_t nei : m_g[v]) {
-		m_covs[nei].erase(v);
+		m_undominated.erase(nei);
 		if (!m_W[nei]) {
 			insert_W(nei);
 		}
@@ -56,8 +60,6 @@ void Instance::insert_D(size_t v) {
 	m_nX.erase(v);
 	erase(v);
 }
-
-#include <cassert> /// TEMP
 
 void Instance::insert_X(size_t v) {
 	if (m_X[v]) {
@@ -67,13 +69,12 @@ void Instance::insert_X(size_t v) {
 		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} is in D", v, v));
 	}
 	m_nX.erase(v);
+	m_undetermined.erase(v);
 	m_X[v] = true;
 	m_doms[v].erase(v);
 	for (size_t nei : m_g[v]) {
 		m_doms[nei].erase(v);
-		if (m_doms[nei].empty() && !m_W[nei]) assert(false && "here");
 	}
-	if (m_doms[v].empty() && !m_W[v]) assert(false && "here!");
 }
 
 void Instance::insert_dead_into_D(size_t v) {
@@ -116,13 +117,14 @@ void Instance::erase(size_t v) {
 	}
 	for (size_t nei : to_del) {
 		m_g.erase(v, nei);
-		if (m_doms[nei].empty() && !m_W[nei] && m_X[nei]) assert(false && "here!!");
 	}
 }
 
 size_t Instance::insert() {
 	size_t index = m_g.add_vertex();
 	m_alives.insert(index);
+	m_undetermined.insert(index);
+	m_undominated.insert(index);
 	m_W.push_back(false);
 	m_D.push_back(false);
 	m_X.push_back(false);
@@ -147,8 +149,6 @@ void Instance::delete_edge(size_t u, size_t v) {
 	m_covs[u].erase(v);
 	m_doms[v].erase(u);
 	m_covs[v].erase(u);
-	if (m_doms[u].empty() && !m_W[u] && m_X[u]) assert(false && "here!!!");
-	if (m_doms[v].empty() && !m_W[v] && m_X[v]) assert(false && "here!!!!");
 }
 
 void Instance::add_edge(size_t u, size_t v) {
@@ -178,6 +178,14 @@ bool Instance::alive(size_t v) const {
 
 const std::unordered_set <size_t>& Instance::alives() const {
 	return m_alives;
+}
+
+const std::unordered_set <size_t>& Instance::undetermined() const {
+	return m_undetermined;
+}
+
+const std::unordered_set <size_t>& Instance::undominated() const {
+	return m_undominated;
 }
 
 bool Instance::W(size_t v) const {
