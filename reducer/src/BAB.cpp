@@ -6,14 +6,15 @@
 #include <limits>
 #include <cassert>
 
-Solution BAB::solve(Instance& instance, Solution best_solution) {
+void BAB::solve(Instance& instance) {
 	// reduce (should also prune lone white components)
 	auto finalize_callback = [this] (Instance& inst) -> Metrics {
 		Solution initial_sol(inst.g().n);
 		for (size_t v = 0; v < inst.g().n; v++) if (inst.D(v) || (inst.alives().contains(v) && !inst.X(v))) initial_sol.insert(v);
-		BAB bab;
+		BAB bab(initial_sol);
 		auto t = inst.get_checkpoint();
-		Solution sol = bab.solve(inst, initial_sol);
+		bab.solve(inst);
+		Solution sol = bab.solution();
 		inst.restore(t);
 		for (size_t v = 0; v < sol.n(); v++) if (sol.in(v) && !inst.D(v)) {
 			if (inst.X(v)) inst.remove_X(v);
@@ -43,11 +44,12 @@ Solution BAB::solve(Instance& instance, Solution best_solution) {
 	if (instance.alives().empty()) {
 		// instance is fully reduced, if it encapsulates a superior solution, return that instead
 		instance.clear_adjusting_callbacks();
-		return instance.D_size() < best_solution.size() ? Solution(best_solution.n(), instance) : best_solution;
+		if (instance.D_size() < m_best_solution.size()) m_best_solution = Solution(m_best_solution.n(), instance);
+		return;
 	}
-	if (best_solution.size() <= lower_bound(instance)) {
+	if (m_best_solution.size() <= lower_bound(instance)) {
 		// current instance cannot be solved more minimally than current best_solution
-		return best_solution;
+		return;
 	}
 	// select a branching vertex
 	size_t bv = m_branch_vertex(instance);
@@ -56,23 +58,19 @@ Solution BAB::solve(Instance& instance, Solution best_solution) {
 	for (size_t u : bv_dom) {
 		auto t = instance.get_checkpoint();
 		instance.insert_D(u);
-		Solution solution_u = solve(instance, best_solution);
+		solve(instance);
 		instance.restore(t);
-		if (solution_u.size() < best_solution.size()) {
-			best_solution = solution_u;
-		}
 		// we have the best solution when u in D, so the remaining ones must have u nin D
 		// first check if no solution exists after inserting u into X
 		// if u isn't allowed in X, return; the best solution for u nin X has already been explored
-		if (instance.dom(u).size() == 1 && !instance.W(u)) return best_solution;
+		if (instance.dom(u).size() == 1 && !instance.W(u)) return;
 		// also check that none of the (closed) neighbors of u become impossible to dominate
 		for (size_t x : instance.cov(u)) {
 			assert(!instance.W(x));
-			if (instance.dom(x).size() == 1) return best_solution;
+			if (instance.dom(x).size() == 1) return;
 		}
 		instance.insert_X(u);
 	}
-	return best_solution;
 }
 
 const Metrics& BAB::metrics() const {
@@ -104,4 +102,8 @@ size_t BAB::m_branch_vertex(const Instance& instance) const {
 		}
 	}
 	return candidates[0].first;
+}
+
+const Solution& BAB::solution() const {
+	return m_best_solution;
 }

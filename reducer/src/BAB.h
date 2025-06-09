@@ -8,15 +8,19 @@ class BAB {
 
 public:
 
-	BAB() = default;
+	inline BAB(const Solution& initial_solution) : m_best_solution(initial_solution) { }
 
-	Solution solve(Instance& instance, Solution best_solution);
+	void solve(Instance& instance);
 
 	const Metrics& metrics() const;
+
+	const Solution& solution() const;
 
 private:
 
 	Metrics m_metrics;
+
+	Solution m_best_solution;
 
 private:
 

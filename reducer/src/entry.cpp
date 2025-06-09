@@ -10,10 +10,10 @@ int main() {
 	if (!vertex_cover_solution(instance)) {
 		Solution solution(instance.g().n);
 		for (size_t i = 0; i < instance.g().n; i++) solution.insert(i);
-		BAB bab;
-		solution = bab.solve(instance, solution);
+		BAB bab(solution);
+		bab.solve(instance);
 		bab.metrics().log(false);
-		std::cout << solution.solution();
+		std::cout << bab.solution().solution();
 	} else {
 		std::cout << instance.solution();
 	}
