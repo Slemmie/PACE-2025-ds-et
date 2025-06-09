@@ -30,94 +30,119 @@ bool Reducer::m_rule_B(Instance& instance) { // O(n)
 	bool found = 0;
 	std::vector <size_t> to_X;
 	std::unordered_set <size_t> lazy_determined;
+	std::unordered_map <size_t, size_t> degree;
+
 	for (size_t u : instance.undetermined()) {
-		bool first = 1;
+		for (size_t v : instance.g()[u]) {
+			degree[v]++;
+		}
+	}
+
+	for (size_t u : instance.undetermined()) {
+		if(instance.cov(u).empty()) continue;
 		std::unordered_set <size_t> subset_coverage;
+		size_t first = *instance.cov(u).begin();
 		for (size_t v : instance.cov(u)) {
-			if(first){
-				for (size_t w : instance.g()[v]) {
-					if (instance.undetermined().contains(w) && !lazy_determined.contains(w)) {
-						subset_coverage.insert(w);
-					}
-				}
-				if (instance.undetermined().contains(v) && !lazy_determined.contains(v)) {
-					subset_coverage.insert(v);
-				}
-				subset_coverage.erase(u);
-				first = 0;
+			if(degree[v] < degree[first]) {
+				std::swap(v, first);
 			}
-			else {
-				std::vector <size_t> to_del;
-				for (size_t val : subset_coverage) {
-					if (!(val == v || instance.g()[v].contains(val))) to_del.emplace_back(val);
-				}
-				for (size_t val : to_del) {
-					subset_coverage.erase(val);
-				}
+		}
+		for (size_t w : instance.g()[first]) {
+			if (instance.undetermined().contains(w) && !lazy_determined.contains(w)) {
+				subset_coverage.insert(w);
+			}
+		}
+		if(instance.undetermined().contains(first) && !lazy_determined.contains(first)) {
+			subset_coverage.insert(first);
+		}
+		subset_coverage.erase(u);
+		for (size_t v : instance.cov(u)) {
+			if(v == first) continue;
+			std::vector <size_t> to_del;
+			for (size_t val : subset_coverage) {
+				if (!(val == v || instance.g()[v].contains(val))) to_del.emplace_back(val);
+			}
+			for (size_t val : to_del) {
+				subset_coverage.erase(val);
 			}
 			if(!subset_coverage.size())break;
 		}
 		if (!subset_coverage.empty()) {
 			to_X.emplace_back(u);
 			lazy_determined.insert(u);
+			for (size_t v : instance.g()[u]) {
+				degree[v]--;
+			}
 			found = 1;
-			break;
 		}
 	}
 	for (size_t u : to_X){
-		if(!instance.X(u)) {
-			instance.insert_X(u);
-			m_metrics.rule_B++;
-		}
+		assert(!instance.X(u));
+		instance.insert_X(u);
+		m_metrics.rule_B++;
 	}
 	return found;
 }
 
 bool Reducer::m_rule_C(Instance& instance) { // O(n)
 	bool found = 0;
-	std::unordered_set <size_t> to_W;
+	std::vector	<size_t> to_W;
 	std::unordered_set <size_t> lazy_dominated;
+
+	std::unordered_map <size_t, size_t> degree;
+
 	for (size_t u : instance.undominated()) {
-		bool first = 1;
+		for (size_t v : instance.g()[u]) {
+			degree[v]++;
+		}
+	}
+
+	for (size_t u : instance.undominated()) {
+		if(instance.dom(u).empty()) continue;
+		if(lazy_dominated.contains(u))continue;
 		std::unordered_set <size_t> ignorable_vertices;
+		size_t first = *instance.dom(u).begin();
 		for (size_t v : instance.dom(u)) {
-			if(first){
-				for (size_t w : instance.g()[v]) {
-					if (instance.undominated().contains(w) && !lazy_dominated.contains(w)) {
-						ignorable_vertices.insert(w);
-					}
-				}
-				if (instance.undominated().contains(v) && !lazy_dominated.contains(v)) {
-					ignorable_vertices.insert(v);
-				}
-				ignorable_vertices.erase(u);
-				first = 0;
+			if(degree[v] < degree[first]) {
+				std::swap(v, first);
 			}
-			else {
-				std::vector <size_t> to_del;
-				for (size_t val : ignorable_vertices) {
-					if (!(val == v || instance.g()[v].contains(val))) to_del.emplace_back(val);
-				}
-				for (size_t val : to_del) {
-					ignorable_vertices.erase(val);
-				}
+		}
+		for (size_t w : instance.g()[first]) {
+			if (instance.undominated().contains(w) && !lazy_dominated.contains(w)) {
+				ignorable_vertices.insert(w);
+			}
+		}
+		if(instance.undominated().contains(first) && !lazy_dominated.contains(first)) {
+			ignorable_vertices.insert(first);
+		}
+		ignorable_vertices.erase(u);
+		for (size_t v : instance.dom(u)) {
+			if(v == first) continue;
+			std::vector <size_t> to_del;
+			for (size_t val : ignorable_vertices) {
+				if (!(val == v || instance.g()[v].contains(val))) to_del.emplace_back(val);
+			}
+			for (size_t val : to_del) {
+				ignorable_vertices.erase(val);
 			}
 			if(!ignorable_vertices.size())break;
 		}
 		for (size_t v : ignorable_vertices) {
-			if(!instance.W(v)) {
-				to_W.insert(v);
-				lazy_dominated.insert(u);
+			if(!instance.W(v) && !lazy_dominated.contains(v)) {
+				to_W.push_back(v);
+				lazy_dominated.insert(v);
+				for (size_t w : instance.g()[v]) {
+					degree[w]--;
+				}
 			}
 		}
 	}
 	if(to_W.size()) {
 		found = 1;
 		for (size_t u : to_W) {
-			if(!instance.W(u)) {
-				instance.insert_W(u);
-				m_metrics.rule_C++;
-			}
+			assert(!instance.W(u));
+			instance.insert_W(u);
+			m_metrics.rule_C++;
 		}
 	}
 	return found;
