@@ -34,6 +34,7 @@ G G::read(std::istream& inf) {
 	{
 		std::string line;
 		while (std::getline(inf, line)) {
+			if (line.empty()) continue;
 			if (line.starts_with('c')) continue;
 			std::istringstream iss(line);
 			std::string token;

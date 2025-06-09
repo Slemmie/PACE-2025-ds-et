@@ -7,6 +7,8 @@
 #include "count_removable_by_domination.h"
 #include "component_size_distribution.h"
 #include "degree_distribution.h"
+#include "line_distribution.h"
+#include "biconnected_component_size_distribution.h"
 
 #include <json-cpp/json.h>
 
@@ -21,6 +23,16 @@ int main(int argc, char** argv) {
 	G g = G::read(file_read(argv[1]));
 
 	JSON json;
+
+	json["biconnected_component_size_distribution"] = JSON();
+	for (auto [k, v] : biconnected_component_size_distribution(g)) {
+		json["biconnected_component_size_distribution"][std::to_string(k)] = JSON((int64_t) v);
+	}
+
+	json["line_length_distribution"] = JSON();
+	for (auto [k, v] : line_distribution(g)) {
+		json["line_length_distribution"][std::to_string(k)] = JSON((int64_t) v);
+	}
 
 	json["component_size_distribution"] = JSON();
 	for (auto [k, v] : component_size_distribution(g)) {
