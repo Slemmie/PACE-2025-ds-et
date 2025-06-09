@@ -25,6 +25,10 @@ struct Metrics {
 
 	size_t W_X_vertices_removed = 0;
 
+	size_t W_Wnh_vertices_removed = 0;
+
+	size_t all_W_removals = 0;
+
 	std::vector <size_t> articulation_point_reductions;
 
 	size_t cut2_missing_gadget_encounters = 0;

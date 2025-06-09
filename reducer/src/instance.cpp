@@ -4,15 +4,18 @@
 #include <format>
 #include <sstream>
 #include <unordered_map>
+#include <iostream>
 
 Instance::Instance(const G& g) :
 m_g(g),
+m_g_orig(g),
 m_W(g.n, false),
 m_D_size(0),
 m_D(g.n, false),
 m_X(g.n, false),
 m_doms(g.n),
-m_covs(g.n)
+m_covs(g.n),
+m_D_nei(g.n, false)
 {
 	for (size_t v = 0; v < g.n; v++) {
 		m_alives.insert(v);
@@ -40,6 +43,11 @@ void Instance::insert_W(size_t v) {
 	}
 }
 
+void Instance::insert_W_Dnei(size_t v) {
+	m_D_nei[v] = true;
+	if (!m_W[v]) insert_W(v);
+}
+
 void Instance::insert_D(size_t v) {
 	if (m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
@@ -56,6 +64,9 @@ void Instance::insert_D(size_t v) {
 		if (!m_W[nei]) {
 			insert_W(nei);
 		}
+	}
+	for (size_t nei : m_g_orig[v]) {
+		m_D_nei[nei] = true;
 	}
 	m_nX.erase(v);
 	erase(v);
@@ -74,6 +85,19 @@ void Instance::insert_X(size_t v) {
 	m_doms[v].erase(v);
 	for (size_t nei : m_g[v]) {
 		m_doms[nei].erase(v);
+	}
+}
+
+void Instance::remove_X(size_t v) {
+	if (!m_X[v]) {
+		throw std::invalid_argument(std::format("attempt to remove {} from X, but {} is not in X", v, v));
+	}
+	m_nX.insert(v);
+	m_undetermined.insert(v);
+	m_X[v] = false;
+	m_doms[v].insert(v);
+	for (size_t nei : m_g[v]) {
+		m_doms[nei].insert(v);
 	}
 }
 
@@ -98,6 +122,7 @@ void Instance::erase(size_t v) {
 
 size_t Instance::insert() {
 	size_t index = m_g.add_vertex();
+	m_g_orig.add_vertex();
 	m_alives.insert(index);
 	m_undetermined.insert(index);
 	m_undominated.insert(index);
@@ -107,6 +132,7 @@ size_t Instance::insert() {
 	m_doms.push_back({ index });
 	m_covs.push_back({ index });
 	m_nX.insert(index);
+	m_D_nei.push_back(false);
 	return index;
 }
 
@@ -142,6 +168,29 @@ void Instance::add_edge(size_t u, size_t v) {
 	if (!m_X[u]) m_doms[v].insert(u);
 	if (!m_D[v] && !m_W[v]) m_covs[u].insert(v);
 	if (!m_D[u] && !m_W[u]) m_covs[v].insert(u);
+	m_g_orig.add(u, v);
+	if (m_D[u]) m_D_nei[v] = true;
+	if (m_D[v]) m_D_nei[u] = true;
+}
+
+void Instance::insert_dead_into_D(size_t v) {
+	if (m_alives.contains(v)) {
+		throw std::invalid_argument(std::format("attempt to insert (alive) {} into D using Instace::insert_dead_into_D()", v));
+	}
+	if (m_D[v]) {
+		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
+	}
+	m_D_size++;
+	m_D[v] = true;
+	for (size_t nei : m_g[v]) insert_W_Dnei(nei);
+}
+
+void Instance::remove_from_D(size_t v) {
+	if (!m_D[v]) {
+		throw std::invalid_argument(std::format("attempt to remove {} from D, but {} not in D", v, v));
+	}
+	m_D_size--;
+	m_D[v] = false;
 }
 
 const G& Instance::g() const {
@@ -174,6 +223,10 @@ bool Instance::D(size_t v) const {
 
 bool Instance::X(size_t v) const {
 	return m_X[v];
+}
+
+bool Instance::D_nei(size_t v) const {
+	return m_D_nei[v];
 }
 
 const std::unordered_set <size_t>& Instance::dom(size_t v) const {

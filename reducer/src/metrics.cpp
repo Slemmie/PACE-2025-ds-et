@@ -17,6 +17,8 @@ void Metrics::log(bool include_stderr) const {
 	oss << "c edges between triangles with one vertex having degree 2 removed: " << tri_tri_edges_removed << "\n";
 	oss << "c edges between two white vertices removed: " << white_white_edges_removed << "\n";
 	oss << "c vertices from both W and X removed directly: " << W_X_vertices_removed << "\n";
+	oss << "c vertices with closed all-white neighborhood removed: " << W_Wnh_vertices_removed << "\n";
+	oss << "c vertices removed due to residing in all-white component: " << all_W_removals << "\n";
 	oss << "c articulation point reductions: ";
 	for (size_t i = 0; i < articulation_point_reductions.size(); i++) {
 		oss << articulation_point_reductions[i];
@@ -57,6 +59,8 @@ void Metrics::add(const Metrics& metrics) {
 	leaves_peeled += metrics.leaves_peeled;
 	tri_tri_edges_removed += metrics.tri_tri_edges_removed;
 	W_X_vertices_removed += metrics.W_X_vertices_removed;
+	W_Wnh_vertices_removed += metrics.W_Wnh_vertices_removed;
+	all_W_removals += metrics.all_W_removals;
 	articulation_point_reductions.insert(articulation_point_reductions.end(), metrics.articulation_point_reductions.begin(), metrics.articulation_point_reductions.end());
 	cut2_missing_gadget_encounters += metrics.cut2_missing_gadget_encounters;
 	cut2_hits.insert(cut2_hits.end(), metrics.cut2_hits.begin(), metrics.cut2_hits.end());

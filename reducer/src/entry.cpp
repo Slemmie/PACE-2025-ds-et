@@ -3,7 +3,6 @@
 #include "BAB.h"
 #include "vertexcover.h"
 
-
 #include <iostream>
 
 int main() {

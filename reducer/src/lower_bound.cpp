@@ -27,6 +27,6 @@ size_t lower_bound(const Instance& instance) {
 	}
 	if (conditions.empty()) return 0;
 	RLP rlp(RLP::Objective_sense::MINIMIZE, cc.size(), obj_fun, conditions);
-	size_t result = std::round(rlp.solve()); // actual lower bound is ceil(rlp.solve()), but use std::round to combat precision errors
+	size_t result = std::ceil(rlp.solve() - 1e-4);
 	return result + instance.D_size();
 }

@@ -94,7 +94,7 @@ G G::read(std::istream& inf) {
 	if (m != ed.size()) {
 		throw std::invalid_argument(std::format("input graph has m = {} but {} edges were found", m, ed.size()));
 	}
-	G g(n, m);
+	G g(n, 0);
 	for (auto [u, v] : ed) {
 		g.add(u, v);
 	}

@@ -49,5 +49,7 @@ private:
 	bool m_tri_tri_edge_removal(Instance& instance);
 	bool m_white_white_edge_removal(Instance& instance);
 	bool m_W_X_vertex_removal(Instance& instance);
+	bool m_W_nh_vertex_removal(Instance& instance);
+	bool m_all_W(Instance& instance);
 
 };

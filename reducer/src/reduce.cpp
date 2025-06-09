@@ -38,10 +38,14 @@ void Reducer::reduce(Instance& instance) {
 			bool stop_trivials = false;
 			while (!stop_trivials) {
 				stop_trivials = true;
+				if (m_all_W(instance)) return false; // graph gets emptied if successful
 				if (m_W_X_vertex_removal(instance)) stop_trivials = false;
 				m_remove_island_vertices(instance);
+				// this is somehow broken:
+				// if (m_W_nh_vertex_removal(instance)) stop_trivials = false;
 				if (m_white_white_edge_removal(instance)) stop_trivials = false;
-				if (m_peel_leaves(instance)) stop_trivials = false;
+				// seems to be broken, but also is a special case of rule_C, so leave it out!!:
+				// if (m_peel_leaves(instance)) stop_trivials = false;
 				if (m_tri_tri_edge_removal(instance)) stop_trivials = false;
 				did_any |= !stop_trivials;
 			}
@@ -99,7 +103,8 @@ void Reducer::reduce(Instance& instance) {
 		bool stop = false;
 		while (!stop) {
 			stop = true;
-			while (m_rule1_step(instance)) m_metrics.rule1_steps++, stop = false;
+			// rule1 is a bit broken after adding vertex-label resetting (fixable), but is also a special case of rule_A+rule_B
+			// while (m_rule1_step(instance)) m_metrics.rule1_steps++, stop = false;
 			while (m_rule2_step(instance)) m_metrics.rule2_steps++, stop = false;
 			if (perform_trivials()) stop = false;
 			if (perform_ABC()) stop = false;
@@ -126,6 +131,4 @@ void Reducer::reduce(Instance& instance) {
 		reducer.reduce(instance);
 		m_metrics.add(reducer.metrics());
 	}
-
-	// finalize(instance);
 }

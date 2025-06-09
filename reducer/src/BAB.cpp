@@ -13,13 +13,17 @@ Solution BAB::solve(Instance instance, Solution best_solution) {
 		for (size_t v = 0; v < inst.g().n; v++) if (inst.D(v) || (inst.alives().contains(v) && !inst.X(v))) initial_sol.insert(v);
 		BAB bab;
 		Solution sol = bab.solve(inst, initial_sol);
-		for (size_t v = 0; v < sol.n(); v++) if (sol.in(v) && !inst.D(v)) inst.insert_D(v);
+		for (size_t v = 0; v < sol.n(); v++) if (sol.in(v) && !inst.D(v)) {
+			if (inst.X(v)) inst.remove_X(v);
+			inst.insert_D(v);
+		}
+		inst.clear_adjusting_callbacks();
 		return bab.metrics();
 	};
 	Reducer reducer(finalize_callback);
 	reducer.reduce(instance);
 	m_metrics.add(reducer.metrics());
-	// /// TEMP BEGIN
+	// // /// TEMP BEGIN
 	// {
 	// 	std::vector <size_t> to_del;
 	// 	for (size_t v : instance.alives()) {
@@ -33,9 +37,10 @@ Solution BAB::solve(Instance instance, Solution best_solution) {
 	// 	}
 	// 	for (size_t v : to_del) instance.erase(v);
 	// }
-	// /// TEMP END
+	// // /// TEMP END
 	if (instance.alives().empty()) {
 		// instance is fully reduced, if it encapsulates a superior solution, return that instead
+		instance.clear_adjusting_callbacks();
 		return instance.D_size() < best_solution.size() ? Solution(best_solution.n(), instance) : best_solution;
 	}
 	if (best_solution.size() <= lower_bound(instance)) {
