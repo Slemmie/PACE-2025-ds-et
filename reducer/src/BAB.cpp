@@ -6,13 +6,15 @@
 #include <limits>
 #include <cassert>
 
-Solution BAB::solve(Instance instance, Solution best_solution) {
+Solution BAB::solve(Instance& instance, Solution best_solution) {
 	// reduce (should also prune lone white components)
 	auto finalize_callback = [this] (Instance& inst) -> Metrics {
 		Solution initial_sol(inst.g().n);
 		for (size_t v = 0; v < inst.g().n; v++) if (inst.D(v) || (inst.alives().contains(v) && !inst.X(v))) initial_sol.insert(v);
 		BAB bab;
+		auto t = inst.get_checkpoint();
 		Solution sol = bab.solve(inst, initial_sol);
+		inst.restore(t);
 		for (size_t v = 0; v < sol.n(); v++) if (sol.in(v) && !inst.D(v)) {
 			if (inst.X(v)) inst.remove_X(v);
 			inst.insert_D(v);
@@ -52,9 +54,10 @@ Solution BAB::solve(Instance instance, Solution best_solution) {
 	std::vector <size_t> bv_dom(instance.dom(bv).begin(), instance.dom(bv).end());
 	std::sort(bv_dom.begin(), bv_dom.end(), [&] (size_t lhs, size_t rhs) { return instance.cov(lhs).size() > instance.cov(rhs).size(); });
 	for (size_t u : bv_dom) {
-		Instance instance_u = instance;
-		instance_u.insert_D(u);
-		Solution solution_u = solve(instance_u, best_solution);
+		auto t = instance.get_checkpoint();
+		instance.insert_D(u);
+		Solution solution_u = solve(instance, best_solution);
+		instance.restore(t);
 		if (solution_u.size() < best_solution.size()) {
 			best_solution = solution_u;
 		}

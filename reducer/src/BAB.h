@@ -10,7 +10,7 @@ public:
 
 	BAB() = default;
 
-	Solution solve(Instance instance, Solution best_solution);
+	Solution solve(Instance& instance, Solution best_solution);
 
 	const Metrics& metrics() const;
 

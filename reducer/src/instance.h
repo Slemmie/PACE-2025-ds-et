@@ -30,6 +30,8 @@ public:
 	void delete_edge(size_t u, size_t v);
 	void add_edge(size_t u, size_t v);
 
+	// using these will make the instance unstable until history is restored to before their usage
+	// ! -> see note at clear_adjusting_callbacks() for when to be aware of this
 	void insert_dead_into_D(size_t v); // special utility for rule2, don't use! puts the instance in an invalid state (except for this->D(size_t))
 	void remove_from_D(size_t v); // special utility for rule2, don't use! puts the instance in an invalid state (except for this->D(size_t))
 
@@ -57,7 +59,11 @@ public:
 	std::string current_graph_string() const;
 
 	void add_adjusting_callback(std::function <void (Instance&)> fn);
+	// calling this might make the instance unstable until history is restored to before the invocation
 	void clear_adjusting_callbacks();
+
+	size_t get_checkpoint() const;
+	void restore(size_t checkpoint);
 
 private:
 
@@ -76,5 +82,7 @@ private:
 
 	// LIFO
 	std::vector <std::function <void (Instance&)>> m_adjusting_callbacks;
+
+	std::vector <std::function <void (Instance&)>> m_history;
 
 };
