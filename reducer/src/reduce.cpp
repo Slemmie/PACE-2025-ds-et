@@ -31,7 +31,7 @@ m_cut_rules_recs(cut_rules_recs)
 
 void Reducer::reduce(Instance& instance) {
 	while (true) {
-		if (instance.alives().empty()) break;
+		if (instance.alives().empty()) return;
 
 		auto perform_trivials = [&] () -> bool {
 			bool did_any = false;
@@ -54,6 +54,8 @@ void Reducer::reduce(Instance& instance) {
 
 		perform_trivials();
 
+		if (instance.alives().empty()) return;
+
 		auto perform_ABC = [&] () -> bool {
 			bool reduced = false;
 			bool stop = false;
@@ -72,6 +74,7 @@ void Reducer::reduce(Instance& instance) {
 			while (both) {
 				both &= perform_ABC();
 				both &= perform_trivials();
+				if (instance.alives().empty()) return;
 			}
 		}
 
@@ -107,6 +110,7 @@ void Reducer::reduce(Instance& instance) {
 			// while (m_rule1_step(instance)) m_metrics.rule1_steps++, stop = false;
 			while (m_rule2_step(instance)) m_metrics.rule2_steps++, stop = false;
 			if (perform_trivials()) stop = false;
+			if (instance.alives().empty()) return;
 			if (perform_ABC()) stop = false;
 		}
 
