@@ -459,8 +459,7 @@ bool Reducer::m_articulation_point_rule_step(Instance& instance) {
 	// try to find an articulation point that isolates a component of useful size
 	bool did_find = false;
 	auto arts = articulation_points(instance);
-	std::random_device rd;
-	std::mt19937 mtgen(rd());
+	std::mt19937 mtgen(0xbeef);
 	std::shuffle(arts.begin(), arts.end(), mtgen);
 	for (size_t v : arts) {
 		if (did_find) break; // only process one v successfully at a time to not break anything
