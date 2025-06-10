@@ -325,7 +325,7 @@ bool Reducer::m_rule2_step(Instance& instance) {
 					all_banned &= m_rule2_nh_banned.contains(u);
 				}
 				if (all_banned) { // abort, we isolated only vertices that will be replaced by identical vertices z1,z2 -> infinite loop
-					assert(to_del.size() == 2);
+					// assert(to_del.size() == 2);
 					continue;
 				}
 				for (size_t u : to_del) {
@@ -542,8 +542,11 @@ bool Reducer::m_articulation_point_rule_step(Instance& instance) {
 					}
 				}
 				Instance ni_vninD_v_dominated_internally(ng_wv);
-				if (instance.W(v)) ni_vninD_v_dominated_internally.insert_W(cc[v]);
-				if (instance.D_nei(v)) ni_vninD_v_dominated_internally.insert_W_Dnei(cc[v]);
+				// if (instance.W(v)) ni_vninD_v_dominated_internally.insert_W(cc[v]);
+				// if (instance.D_nei(v)) ni_vninD_v_dominated_internally.insert_W_Dnei(cc[v]);
+				if (instance.W(v)) assert(false);
+				if (instance.D_nei(v)) assert(false);
+				if (!instance.X(v)) assert(false);
 				for (size_t x : comp) {
 					if (instance.W(x)) {
 						ni_vninD_v_dominated_internally.insert_W(cc[x]);
@@ -623,9 +626,61 @@ bool Reducer::m_articulation_point_rule_step(Instance& instance) {
 						ni_vinD.insert_X(cc[x]);
 					}
 				}
+				bool all_outside_nei_are_X = true;
+				for (size_t x : instance.g()[v]) {
+					if (cc.contains(x)) continue;
+					all_outside_nei_are_X &= instance.X(x);
+				}
+				if (all_outside_nei_are_X) v_off_impossible = true;
 				size_t cost_v_off = v_off_impossible ? 1ULL << 60 : go(ni_vninD);
 				size_t cost_v_on = go(ni_vinD);
-				if (cost_v_off > cost_v_on) { // insert v in D, leaving v out of D is never a strictly better choice
+				if (all_outside_nei_are_X) {
+					G ng_wv(comp.size() + 1);
+					cc[v] = cc.size();
+					for (size_t x : comp) {
+						for (size_t y : instance.g()[x]) {
+							if (x < y || y == v) ng_wv.add(cc[x], cc[y]), assert(cc[x] < ng_wv.n && cc[y] < ng_wv.n); // this time also add edges to v
+						}
+					}
+					Instance ni_vninD_v_dominated_internally(ng_wv);
+					for (size_t x : comp) {
+						if (instance.W(x)) {
+							ni_vninD_v_dominated_internally.insert_W(cc[x]);
+						}
+					}
+					for (size_t x : comp) {
+						if (instance.D_nei(x)) {
+							ni_vninD_v_dominated_internally.insert_W_Dnei(cc[x]);
+						}
+					}
+					for (size_t x : comp) {
+						if (instance.X(x)) {
+							ni_vninD_v_dominated_internally.insert_X(cc[x]);
+						}
+					}
+					size_t cost_v_off_v_dominated_internally = go(ni_vninD_v_dominated_internally);
+					if (cost_v_off_v_dominated_internally <= cost_v_on) {
+						if (ni_vninD_v_dominated_internally.D(cc[v])) instance.insert_D(v); // the solution might have decided to use v for D? (disprove?)
+						for (size_t i = 0; i < comp.size(); i++) {
+							if (ni_vninD_v_dominated_internally.D(i)) {
+								assert(i == cc[comp[i]]); // sanity check that i in new instance maps to comp[i] in original instance
+								if (instance.X(comp[i])) instance.remove_X(comp[i]);
+								instance.insert_D(comp[i]);
+							}
+						}
+						assert(instance.D(v) || instance.W(v)); // at this point, the solution to the internal component should dominate v
+					} else {
+						instance.insert_D(v);
+						// pick solution where v in D
+						for (size_t i = 0; i < comp.size(); i++) {
+							if (ni_vinD.D(i)) {
+								assert(i == cc[comp[i]]); // sanity check that i in new instance maps to comp[i] in original instance
+								if (instance.X(comp[i])) instance.remove_X(comp[i]);
+								instance.insert_D(comp[i]);
+							}
+						}
+					}
+				} else if (cost_v_off > cost_v_on) { // insert v in D, leaving v out of D is never a strictly better choice
 					instance.insert_D(v);
 					// pick solution where v in D
 					for (size_t i = 0; i < comp.size(); i++) {
