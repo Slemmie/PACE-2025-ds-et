@@ -89,6 +89,10 @@ int main(int argc, char** argv) {
 	}
 
 	std::string outdir = argv[1];
+	if(outdir.back() != '/')outdir += '/';
+
+	std::filesystem::create_directories(outdir);
+
 	double size_multiplier = std::stod(argv[2]);
 
 	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 30), outdir + std::format("{:03d}", i) + "_full_random.gr");
