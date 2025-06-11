@@ -1,5 +1,7 @@
 #include "rlp.h"
 
+#include "hash_table.h"
+
 #ifdef LP_CBC
 #include <coin/OsiClpSolverInterface.hpp>
 #include <coin/CbcModel.hpp>
@@ -33,7 +35,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-RLP::RLP(Objective_sense obj_sense, size_t num_variables, const Expression& obj_fun, const std::vector <Expression>& conditions) :
+RLP::RLP(Objective_sense obj_sense, szt num_variables, const Expression& obj_fun, const std::vector <Expression>& conditions) :
 m_obj_sense(obj_sense),
 m_num_variables(num_variables),
 m_obj_fun(obj_fun),
@@ -75,6 +77,8 @@ double RLP::solve() {
 	CbcModel model(solver);
 	model.messageHandler()->setLogLevel(0);
 
+	model.setTypePresolve(2);
+
 	CglGomory* gomory = new CglGomory();
 	model.addCutGenerator(gomory, 0, "Gomory");
 
@@ -88,22 +92,32 @@ double RLP::solve() {
 		close(fd);
 	}
 	model.branchAndBound();
+	// solver.initialSolve();
+	double objval = model.solver()->getObjValue();
 	{
 		fflush(stdout);
 		dup2(original_stdout, STDOUT_FILENO);
 	}
 
-	const double* solution = model.bestSolution();
-
-	if (solution) {
-		double sum = 0;
-		size_t num_c = solver.getNumCols();
-		for (size_t i = 0; i < num_c; i++) {
-			sum += solution[i];
-		}
+	if (!model.isProvenOptimal()) {
 		delete(gomory);
-		return sum;
+		return 0;
 	}
+
+	delete(gomory);
+	return objval;
+
+	// const double* solution = model.bestSolution();
+	//
+	// if (solution) {
+	// 	double sum = 0;
+	// 	size_t num_c = solver.getNumCols();
+	// 	for (size_t i = 0; i < num_c; i++) {
+	// 		sum += solution[i];
+	// 	}
+	// 	delete(gomory);
+	// 	return sum;
+	// }
 
 	delete(gomory);
 	throw std::runtime_error("LP solver failed to find a solution");
@@ -178,11 +192,11 @@ double RLP::solve() {
 
 	HighsSolution solution = highs.getSolution();
 
-	std::vector <size_t> result;
+	std::vector <szt> result;
 	result.reserve(m_num_variables);
 	for (int j = 0; j < static_cast <int> (m_num_variables); j++) {
 		if (solution.col_value[j] > 0.5) {
-			result.push_back(static_cast <size_t> (j));
+			result.push_back(static_cast <szt> (j));
 		}
 	}
 	return result;
@@ -224,12 +238,12 @@ double RLP::solve() {
 
 	std::vector <double> obj_coefs(m_num_variables, 0);
 	for (const Term& term : m_obj_fun.terms) {
-		assert(term.variable < m_num_variables);
+		ASSERT(term.variable < m_num_variables);
 		obj_coefs[term.variable] = static_cast <double> (term.coefficient);
 	}
 
 	std::vector <SCIP_VAR*> vars(m_num_variables, nullptr);
-	for (size_t i = 0; i < m_num_variables; i++) {
+	for (szt i = 0; i < m_num_variables; i++) {
 		std::string var_name = "x" + std::to_string(i);
 		SCIP_VAR* v = nullptr;
 		SCIPCALL(SCIPcreateVarBasic(scip, &v, var_name.c_str(), 0, 1, obj_coefs[i], SCIP_VARTYPE_BINARY));
@@ -246,7 +260,7 @@ double RLP::solve() {
 		cons_coefs.reserve(expr.terms.size());
 
 		for (const Term& term : expr.terms) {
-			assert(term.variable < m_num_variables);
+			ASSERT(term.variable < m_num_variables);
 			cons_vars.push_back(vars[term.variable]);
 			cons_coefs.push_back(static_cast <double> (term.coefficient));
 		}
@@ -262,9 +276,9 @@ double RLP::solve() {
 	SCIPCALL(SCIPsolve(scip));
 	SCIP_SOL* sol = SCIPgetBestSol(scip);
 
-	std::vector <size_t> result;
+	std::vector <szt> result;
 	if (sol != nullptr) {
-		for (size_t i = 0; i < m_num_variables; i++) {
+		for (szt i = 0; i < m_num_variables; i++) {
 			double val = SCIPgetSolVal(scip, sol, vars[i]);
 			if (val > 0.5) result.push_back(i);
 		}
@@ -280,7 +294,8 @@ double RLP::solve() {
 }
 
 void RLP::Expression::simplify() {
-	std::unordered_map <size_t, int> acc_coefs;
+	hash_map <szt, int> acc_coefs;
+	// reserve(acc_coefs, terms.size());
 	for (Term term : terms) {
 		acc_coefs[term.variable] += term.coefficient;
 	}

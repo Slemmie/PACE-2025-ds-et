@@ -8,20 +8,22 @@
 
 void finalize(Instance& instance) {
 	// std::cerr << "DEBUG: finalizing " << instance.alives().size() << " vertices" << std::endl;
-	std::unordered_map <size_t, size_t> cc, icc;
-	for (size_t v : instance.alives()) {
+	hash_map <szt, szt> cc, icc;
+	// reserve(cc, instance.nX().size());
+	// reserve(icc, instance.nX().size());
+	for (szt v : instance.alives()) {
 		if (instance.X(v)) continue;
 		cc[v] = cc.size();
 		icc[cc[v]] = v;
 	}
 	LP::Expression obj_fun;
 	std::vector <LP::Expression> conditions;
-	for (size_t v : instance.alives()) {
+	for (szt v : instance.alives()) {
 		if (!instance.X(v)) obj_fun.terms.push_back(LP::Term { .variable = cc[v], .coefficient = 1 });
 		if (instance.W(v)) continue;
 		LP::Expression condition;
 		if (!instance.X(v)) condition.terms.push_back(LP::Term { .variable = cc[v], .coefficient = 1 });
-		for (size_t nei : instance.g()[v]) {
+		for (szt nei : instance.g()[v]) {
 			if (instance.X(nei)) continue;
 			condition.terms.push_back(LP::Term { .variable = cc[nei], .coefficient = 1 });
 		}
@@ -33,17 +35,17 @@ void finalize(Instance& instance) {
 		return;
 	}
 	LP lp(LP::Objective_sense::MINIMIZE, cc.size(), obj_fun, conditions);
-	for (size_t i : lp.solve()) {
+	for (szt i : lp.solve()) {
 		instance.insert_D(icc[i]);
 	}
 	instance.clear_adjusting_callbacks();
 	// now remove the remaining (white) vertices
-	std::vector <size_t> to_rem;
-	for (size_t v : instance.alives()) {
+	std::vector <szt> to_rem;
+	for (szt v : instance.alives()) {
 		to_rem.push_back(v);
-		assert(instance.W(v));
+		ASSERT(instance.W(v));
 	}
-	for (size_t v : to_rem) {
+	for (szt v : to_rem) {
 		instance.erase(v);
 	}
 }

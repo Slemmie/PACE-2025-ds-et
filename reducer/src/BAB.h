@@ -24,6 +24,6 @@ private:
 
 private:
 
-	size_t m_branch_vertex(const Instance& instance) const;
+	szt m_branch_vertex(const Instance& instance) const;
 
 };

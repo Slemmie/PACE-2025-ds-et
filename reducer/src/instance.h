@@ -8,6 +8,7 @@
 #pragma once
 
 #include "graph.h"
+#include "hash_table.h"
 
 #include <vector>
 #include <unordered_set>
@@ -20,39 +21,39 @@ public:
 
 	Instance(const G& g);
 
-	void insert_W(size_t v);
-	void insert_W_Dnei(size_t v);
-	void insert_D(size_t v);
-	void insert_X(size_t v);
-	void remove_X(size_t v);
-	void erase(size_t v);
-	size_t insert();
-	void delete_edge(size_t u, size_t v);
-	void add_edge(size_t u, size_t v);
+	void insert_W(szt v);
+	void insert_W_Dnei(szt v);
+	void insert_D(szt v);
+	void insert_X(szt v);
+	void remove_X(szt v);
+	void erase(szt v);
+	szt insert();
+	void delete_edge(szt u, szt v);
+	void add_edge(szt u, szt v);
 
 	// using these will make the instance unstable until history is restored to before their usage
 	// ! -> see note at clear_adjusting_callbacks() for when to be aware of this
-	void insert_dead_into_D(size_t v); // special utility for rule2, don't use! puts the instance in an invalid state (except for this->D(size_t))
-	void remove_from_D(size_t v); // special utility for rule2, don't use! puts the instance in an invalid state (except for this->D(size_t))
+	void insert_dead_into_D(szt v); // special utility for rule2, don't use! puts the instance in an invalid state (except for this->D(szt))
+	void remove_from_D(szt v); // special utility for rule2, don't use! puts the instance in an invalid state (except for this->D(szt))
 
 	const G& g() const;
-	bool alive(size_t v) const;
-	const std::unordered_set <size_t>& alives() const;
-	const std::unordered_set <size_t>& undetermined() const;
-	const std::unordered_set <size_t>& undominated() const;
-	bool W(size_t v) const;
-	bool D(size_t v) const;
-	bool X(size_t v) const;
-	bool D_nei(size_t v) const;
+	bool alive(szt v) const;
+	const hash_set <szt>& alives() const;
+	const hash_set <szt>& undetermined() const;
+	const hash_set <szt>& undominated() const;
+	bool W(szt v) const;
+	bool D(szt v) const;
+	bool X(szt v) const;
+	bool D_nei(szt v) const;
 
-	const std::unordered_set <size_t>& dom(size_t v) const; // u in dom -> u is undecided and (closed) neighbor to v
-	const std::unordered_set <size_t>& cov(size_t v) const; // u in cov -> u is undominated and (closed) neighbor to v
+	const hash_set <szt>& dom(szt v) const; // u in dom -> u is undecided and (closed) neighbor to v
+	const hash_set <szt>& cov(szt v) const; // u in cov -> u is undominated and (closed) neighbor to v
 
-	const std::unordered_set <size_t>& nX() const; // all alive vertices not in X
+	const hash_set <szt>& nX() const; // all alive vertices not in X
 
-	size_t D_size() const;
+	szt D_size() const;
 
-	bool can_insert_X(size_t v) const;
+	bool can_insert_X(szt v) const;
 
 	std::string solution() const;
 
@@ -62,22 +63,22 @@ public:
 	// calling this might make the instance unstable until history is restored to before the invocation
 	void clear_adjusting_callbacks();
 
-	size_t get_checkpoint() const;
-	void restore(size_t checkpoint);
+	szt get_checkpoint() const;
+	void restore(szt checkpoint);
 
 private:
 
 	G m_g;
 	G m_g_orig;
-	std::unordered_set <size_t> m_alives;
-	std::unordered_set <size_t> m_undetermined;
-	std::unordered_set <size_t> m_undominated;
+	hash_set <szt> m_alives;
+	hash_set <szt> m_undetermined;
+	hash_set <szt> m_undominated;
 	std::vector <bool> m_W;
-	size_t m_D_size;
+	szt m_D_size;
 	std::vector <bool> m_D;
 	std::vector <bool> m_X;
-	std::vector <std::unordered_set <size_t>> m_doms, m_covs;
-	std::unordered_set <size_t> m_nX;
+	std::vector <hash_set <szt>> m_doms, m_covs;
+	hash_set <szt> m_nX;
 	std::vector <bool> m_D_nei;
 
 	// LIFO

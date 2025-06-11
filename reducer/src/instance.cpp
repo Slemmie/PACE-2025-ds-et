@@ -17,13 +17,19 @@ m_doms(g.n),
 m_covs(g.n),
 m_D_nei(g.n, false)
 {
-	for (size_t v = 0; v < g.n; v++) {
+	reserve(m_alives, g.n);
+	reserve(m_undetermined, g.n);
+	reserve(m_undominated, g.n);
+	reserve(m_nX, g.n);
+	for (szt v = 0; v < g.n; v++) {
 		m_alives.insert(v);
 		m_undetermined.insert(v);
 		m_undominated.insert(v);
+		// reserve(m_doms[v], g[v].size() + 1);
+		// reserve(m_covs[v], g[v].size() + 1);
 		m_doms[v].insert(v);
 		m_covs[v].insert(v);
-		for (size_t nei : g[v]) {
+		for (szt nei : g[v]) {
 			m_doms[v].insert(nei);
 			m_covs[v].insert(nei);
 		}
@@ -31,32 +37,32 @@ m_D_nei(g.n, false)
 	}
 }
 
-void Instance::insert_W(size_t v) {
+void Instance::insert_W(szt v) {
 	if (m_W[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into W, but {} already in W", v, v));
 	}
-	bool was_erased_from_undominated = m_undominated.contains(v);
+	bool was_erased_from_undominated = contains(m_undominated, v);
 	bool was_inserted_into_W = m_W[v] == false;
-	std::vector <size_t> erased_from_covs;
+	std::vector <szt> erased_from_covs;
 
 	m_undominated.erase(v);
 	m_W[v] = true;
-	if (m_covs[v].contains(v)) erased_from_covs.push_back(v);
+	if (contains(m_covs[v], v)) erased_from_covs.push_back(v);
 	m_covs[v].erase(v);
-	for (size_t nei : m_g[v]) {
-		if (m_covs[nei].contains(v)) erased_from_covs.push_back(nei);
+	for (szt nei : m_g[v]) {
+		if (contains(m_covs[nei], v)) erased_from_covs.push_back(nei);
 		m_covs[nei].erase(v);
 	}
 
 	auto undo = [v, was_erased_from_undominated, was_inserted_into_W, erased_from_covs] (Instance& inst) -> void {
 		if (was_erased_from_undominated) inst.m_undominated.insert(v);
 		if (was_inserted_into_W) inst.m_W[v] = false;
-		for (size_t x : erased_from_covs) inst.m_covs[x].insert(v);
+		for (szt x : erased_from_covs) inst.m_covs[x].insert(v);
 	};
 	m_history.push_back(undo);
 }
 
-void Instance::insert_W_Dnei(size_t v) {
+void Instance::insert_W_Dnei(szt v) {
 	bool was_inserted_into_D_nei = m_D_nei[v] == false;
 
 	m_D_nei[v] = true;
@@ -70,28 +76,28 @@ void Instance::insert_W_Dnei(size_t v) {
 	if (!m_W[v]) insert_W(v);
 }
 
-void Instance::insert_D(size_t v) {
+void Instance::insert_D(szt v) {
 	if (m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} already in D", v, v));
 	}
 	if (m_X[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into D, but {} is in X", v, v));
 	}
-	bool was_erased_from_undetermined = m_undetermined.contains(v);
-	std::vector <size_t> erased_from_undominated;
+	bool was_erased_from_undetermined = contains(m_undetermined, v);
+	std::vector <szt> erased_from_undominated;
 	bool was_inserted_into_D = m_D[v] == false;
-	std::vector <size_t> inserted_into_D_nei;
-	bool was_erased_from_nX = m_nX.contains(v);
+	std::vector <szt> inserted_into_D_nei;
+	bool was_erased_from_nX = contains(m_nX, v);
 
 	m_undetermined.erase(v);
 	m_undominated.erase(v);
 	m_D_size++;
 	m_D[v] = true;
-	for (size_t nei : m_g[v]) {
-		if (m_undominated.contains(nei)) erased_from_undominated.push_back(nei);
+	for (szt nei : m_g[v]) {
+		if (contains(m_undominated, nei)) erased_from_undominated.push_back(nei);
 		m_undominated.erase(nei);
 	}
-	for (size_t nei : m_g_orig[v]) {
+	for (szt nei : m_g_orig[v]) {
 		if (m_D_nei[nei] == false) inserted_into_D_nei.push_back(nei);
 		m_D_nei[nei] = true;
 	}
@@ -99,16 +105,16 @@ void Instance::insert_D(size_t v) {
 
 	auto undo = [v, was_erased_from_undetermined, erased_from_undominated, was_inserted_into_D, inserted_into_D_nei, was_erased_from_nX] (Instance& inst) -> void {
 		if (was_erased_from_undetermined) inst.m_undetermined.insert(v);
-		for (size_t x : erased_from_undominated) inst.m_undominated.insert(x);
+		for (szt x : erased_from_undominated) inst.m_undominated.insert(x);
 		inst.m_D_size--;
 		if (was_inserted_into_D) inst.m_D[v] = false;
-		for (size_t x : inserted_into_D_nei) inst.m_D_nei[x] = false;
+		for (szt x : inserted_into_D_nei) inst.m_D_nei[x] = false;
 		if (was_erased_from_nX) inst.m_nX.insert(v);
 	};
 	m_history.push_back(undo);
 
 	// history entries from insert_W(nei)s and erase(v) should be recovered first (added after ours), as its changes happened after ours
-	for (size_t nei : m_g[v]) {
+	for (szt nei : m_g[v]) {
 		if (!m_W[nei]) {
 			insert_W(nei);
 		}
@@ -116,25 +122,25 @@ void Instance::insert_D(size_t v) {
 	erase(v);
 }
 
-void Instance::insert_X(size_t v) {
+void Instance::insert_X(szt v) {
 	if (m_X[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} already in X", v, v));
 	}
 	if (m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to insert {} into X, but {} is in D", v, v));
 	}
-	bool was_erased_from_nX = m_nX.contains(v);
-	bool was_erased_from_undetermined = m_undetermined.contains(v);
+	bool was_erased_from_nX = contains(m_nX, v);
+	bool was_erased_from_undetermined = contains(m_undetermined, v);
 	bool was_inserted_into_X = m_X[v] == false;
-	std::vector <size_t> erased_from_doms;
+	std::vector <szt> erased_from_doms;
 
 	m_nX.erase(v);
 	m_undetermined.erase(v);
 	m_X[v] = true;
-	if (m_doms[v].contains(v)) erased_from_doms.push_back(v);
+	if (contains(m_doms[v], v)) erased_from_doms.push_back(v);
 	m_doms[v].erase(v);
-	for (size_t nei : m_g[v]) {
-		if (m_doms[nei].contains(v)) erased_from_doms.push_back(nei);
+	for (szt nei : m_g[v]) {
+		if (contains(m_doms[nei], v)) erased_from_doms.push_back(nei);
 		m_doms[nei].erase(v);
 	}
 
@@ -142,27 +148,27 @@ void Instance::insert_X(size_t v) {
 		if (was_erased_from_nX) inst.m_nX.insert(v);
 		if (was_erased_from_undetermined) inst.m_undetermined.insert(v);
 		if (was_inserted_into_X) inst.m_X[v] = false;
-		for (size_t x : erased_from_doms) inst.m_doms[x].insert(v);
+		for (szt x : erased_from_doms) inst.m_doms[x].insert(v);
 	};
 	m_history.push_back(undo);
 }
 
-void Instance::remove_X(size_t v) {
+void Instance::remove_X(szt v) {
 	if (!m_X[v]) {
 		throw std::invalid_argument(std::format("attempt to remove {} from X, but {} is not in X", v, v));
 	}
-	bool was_inserted_into_nX = !m_nX.contains(v);
-	bool was_inserted_into_undetermined = !m_undetermined.contains(v);
+	bool was_inserted_into_nX = !contains(m_nX, v);
+	bool was_inserted_into_undetermined = !contains(m_undetermined, v);
 	bool was_erased_from_X = m_X[v] == true;
-	std::vector <size_t> inserted_into_doms;
+	std::vector <szt> inserted_into_doms;
 
 	m_nX.insert(v);
 	m_undetermined.insert(v);
 	m_X[v] = false;
-	if (!m_doms[v].contains(v)) inserted_into_doms.push_back(v);
+	if (!contains(m_doms[v], v)) inserted_into_doms.push_back(v);
 	m_doms[v].insert(v);
-	for (size_t nei : m_g[v]) {
-		if (!m_doms[nei].contains(v)) inserted_into_doms.push_back(nei);
+	for (szt nei : m_g[v]) {
+		if (!contains(m_doms[nei], v)) inserted_into_doms.push_back(nei);
 		m_doms[nei].insert(v);
 	}
 
@@ -170,36 +176,36 @@ void Instance::remove_X(size_t v) {
 		if (was_inserted_into_nX) inst.m_nX.erase(v);
 		if (was_inserted_into_undetermined) inst.m_undetermined.erase(v);
 		if (was_erased_from_X) inst.m_X[v] = true;
-		for (size_t x : inserted_into_doms) inst.m_doms[x].erase(v);
+		for (szt x : inserted_into_doms) inst.m_doms[x].erase(v);
 	};
 	m_history.push_back(undo);
 }
 
-void Instance::erase(size_t v) {
-	if (!m_alives.contains(v)) {
+void Instance::erase(szt v) {
+	if (!contains(m_alives, v)) {
 		throw std::invalid_argument(std::format("attempt to erase {} from graph, but {} already erased", v, v));
 	}
-	bool was_erased_from_undetermined = m_undetermined.contains(v);
-	bool was_erased_from_undominated = m_undominated.contains(v);
-	bool was_erased_from_nX = m_nX.contains(v);
-	bool was_erased_from_alives = m_alives.contains(v);
-	std::vector <size_t> erased_from_doms;
-	std::vector <size_t> erased_from_covs;
-	std::vector <std::pair <size_t, size_t>> edges_erased;
+	bool was_erased_from_undetermined = contains(m_undetermined, v);
+	bool was_erased_from_undominated = contains(m_undominated, v);
+	bool was_erased_from_nX = contains(m_nX, v);
+	bool was_erased_from_alives = contains(m_alives, v);
+	std::vector <szt> erased_from_doms;
+	std::vector <szt> erased_from_covs;
+	std::vector <std::pair <szt, szt>> edges_erased;
 
 	m_undetermined.erase(v);
 	m_undominated.erase(v);
 	m_nX.erase(v);
 	m_alives.erase(v);
-	std::vector <size_t> to_del;
-	for (size_t nei : m_g[v]) {
-		if (m_doms[nei].contains(v)) erased_from_doms.push_back(nei);
-		if (m_covs[nei].contains(v)) erased_from_covs.push_back(nei);
+	std::vector <szt> to_del;
+	for (szt nei : m_g[v]) {
+		if (contains(m_doms[nei], v)) erased_from_doms.push_back(nei);
+		if (contains(m_covs[nei], v)) erased_from_covs.push_back(nei);
 		m_doms[nei].erase(v);
 		m_covs[nei].erase(v);
 		to_del.emplace_back(nei);
 	}
-	for (size_t nei : to_del) {
+	for (szt nei : to_del) {
 		edges_erased.emplace_back(v, nei);
 		m_g.erase(v, nei);
 	}
@@ -218,15 +224,15 @@ void Instance::erase(size_t v) {
 		if (was_erased_from_undominated) inst.m_undominated.insert(v);
 		if (was_erased_from_nX) inst.m_nX.insert(v);
 		if (was_erased_from_alives) inst.m_alives.insert(v);
-		for (size_t x : erased_from_doms) inst.m_doms[x].insert(v);
-		for (size_t x : erased_from_covs) inst.m_covs[x].insert(v);
+		for (szt x : erased_from_doms) inst.m_doms[x].insert(v);
+		for (szt x : erased_from_covs) inst.m_covs[x].insert(v);
 		for (auto [x, y] : edges_erased) inst.m_g.add(x, y);
 	};
 	m_history.push_back(undo);
 }
 
-size_t Instance::insert() {
-	size_t index = m_g.add_vertex();
+szt Instance::insert() {
+	szt index = m_g.add_vertex();
 	m_g_orig.add_vertex();
 	m_alives.insert(index);
 	m_undetermined.insert(index);
@@ -234,8 +240,9 @@ size_t Instance::insert() {
 	m_W.push_back(false);
 	m_D.push_back(false);
 	m_X.push_back(false);
-	m_doms.push_back({ index });
-	m_covs.push_back({ index });
+	hash_set <szt> tmp; tmp.insert(index);
+	m_doms.push_back(tmp);
+	m_covs.push_back(tmp);
 	m_nX.insert(index);
 	m_D_nei.push_back(false);
 
@@ -258,28 +265,28 @@ size_t Instance::insert() {
 	return index;
 }
 
-void Instance::delete_edge(size_t u, size_t v) {
+void Instance::delete_edge(szt u, szt v) {
 	if (u >= m_g.n) {
 		throw std::invalid_argument(std::format("attempt to delete edge ({}, {}), but {} is out of bounds", u, v, u));
 	}
 	if (v >= m_g.n) {
 		throw std::invalid_argument(std::format("attempt to delete edge ({}, {}), but {} is out of bounds", u, v, v));
 	}
-	if (!m_g[u].contains(v)) {
+	if (!contains(m_g[u], v)) {
 		throw std::invalid_argument(std::format("attempt to delete edge ({}, {}), it does not exist", u, v));
 	}
 
-	std::vector <std::pair <size_t, size_t>> doms_erases;
-	std::vector <std::pair <size_t, size_t>> covs_erases;
+	std::vector <std::pair <szt, szt>> doms_erases;
+	std::vector <std::pair <szt, szt>> covs_erases;
 
 	m_g.erase(u, v);
-	if (m_doms[u].contains(v)) doms_erases.emplace_back(u, v);
+	if (contains(m_doms[u], v)) doms_erases.emplace_back(u, v);
 	m_doms[u].erase(v);
-	if (m_covs[u].contains(v)) covs_erases.emplace_back(u, v);
+	if (contains(m_covs[u], v)) covs_erases.emplace_back(u, v);
 	m_covs[u].erase(v);
-	if (m_doms[v].contains(u)) doms_erases.emplace_back(v, u);
+	if (contains(m_doms[v], u)) doms_erases.emplace_back(v, u);
 	m_doms[v].erase(u);
-	if (m_covs[v].contains(u)) covs_erases.emplace_back(v, u);
+	if (contains(m_covs[v], u)) covs_erases.emplace_back(v, u);
 	m_covs[v].erase(u);
 
 	auto undo = [u, v, doms_erases, covs_erases] (Instance& inst) -> void {
@@ -290,36 +297,36 @@ void Instance::delete_edge(size_t u, size_t v) {
 	m_history.push_back(undo);
 }
 
-void Instance::add_edge(size_t u, size_t v) {
+void Instance::add_edge(szt u, szt v) {
 	if (u >= m_g.n) {
 		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), but {} is out of bounds", u, v, u));
 	}
 	if (v >= m_g.n) {
 		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), but {} is out of bounds", u, v, v));
 	}
-	if (m_g[u].contains(v)) {
+	if (contains(m_g[u], v)) {
 		throw std::invalid_argument(std::format("attempt to add edge ({}, {}), it already exists", u, v));
 	}
 
-	std::vector <std::pair <size_t, size_t>> doms_insertions;
-	std::vector <std::pair <size_t, size_t>> covs_insertions;
+	std::vector <std::pair <szt, szt>> doms_insertions;
+	std::vector <std::pair <szt, szt>> covs_insertions;
 	std::vector <bool> D_nei_insertions;
 
 	m_g.add(u, v);
 	if (!m_X[v]) {
-		if (!m_doms[u].contains(v)) doms_insertions.emplace_back(u, v);
+		if (!contains(m_doms[u], v)) doms_insertions.emplace_back(u, v);
 		m_doms[u].insert(v);
 	}
 	if (!m_X[u]) {
-		if (!m_doms[v].contains(u)) doms_insertions.emplace_back(v, u);
+		if (!contains(m_doms[v], u)) doms_insertions.emplace_back(v, u);
 		m_doms[v].insert(u);
 	}
 	if (!m_D[v] && !m_W[v]) {
-		if (!m_covs[u].contains(v)) covs_insertions.emplace_back(u, v);
+		if (!contains(m_covs[u], v)) covs_insertions.emplace_back(u, v);
 		m_covs[u].insert(v);
 	}
 	if (!m_D[u] && !m_W[u]) {
-		if (!m_covs[v].contains(u)) covs_insertions.emplace_back(v, u);
+		if (!contains(m_covs[v], u)) covs_insertions.emplace_back(v, u);
 		m_covs[v].insert(u);
 	}
 	m_g_orig.add(u, v);
@@ -337,13 +344,13 @@ void Instance::add_edge(size_t u, size_t v) {
 		for (auto [x, y] : doms_insertions) inst.m_doms[x].erase(y);
 		for (auto [x, y] : covs_insertions) inst.m_covs[x].erase(y);
 		inst.m_g_orig.erase(u, v);
-		for (size_t x : D_nei_insertions) inst.m_D_nei[x] = false;
+		for (szt x : D_nei_insertions) inst.m_D_nei[x] = false;
 	};
 	m_history.push_back(undo);
 }
 
-void Instance::insert_dead_into_D(size_t v) {
-	if (m_alives.contains(v)) {
+void Instance::insert_dead_into_D(szt v) {
+	if (contains(m_alives, v)) {
 		throw std::invalid_argument(std::format("attempt to insert (alive) {} into D using Instace::insert_dead_into_D()", v));
 	}
 	if (m_D[v]) {
@@ -362,12 +369,12 @@ void Instance::insert_dead_into_D(size_t v) {
 	m_history.push_back(undo);
 
 	// history entries from insert_W_Dnei(nei)s should be recovered first (added after ours), as its changes happened after ours
-	for (size_t nei : m_g[v]) {
+	for (szt nei : m_g[v]) {
 		insert_W_Dnei(nei);
 	}
 }
 
-void Instance::remove_from_D(size_t v) {
+void Instance::remove_from_D(szt v) {
 	if (!m_D[v]) {
 		throw std::invalid_argument(std::format("attempt to remove {} from D, but {} not in D", v, v));
 	}
@@ -388,56 +395,56 @@ const G& Instance::g() const {
 	return m_g;
 }
 
-bool Instance::alive(size_t v) const {
-	return m_alives.contains(v);
+bool Instance::alive(szt v) const {
+	return contains(m_alives, v);
 }
 
-const std::unordered_set <size_t>& Instance::alives() const {
+const hash_set <szt>& Instance::alives() const {
 	return m_alives;
 }
 
-const std::unordered_set <size_t>& Instance::undetermined() const {
+const hash_set <szt>& Instance::undetermined() const {
 	return m_undetermined;
 }
 
-const std::unordered_set <size_t>& Instance::undominated() const {
+const hash_set <szt>& Instance::undominated() const {
 	return m_undominated;
 }
 
-bool Instance::W(size_t v) const {
+bool Instance::W(szt v) const {
 	return m_W[v];
 }
 
-bool Instance::D(size_t v) const {
+bool Instance::D(szt v) const {
 	return m_D[v];
 }
 
-bool Instance::X(size_t v) const {
+bool Instance::X(szt v) const {
 	return m_X[v];
 }
 
-bool Instance::D_nei(size_t v) const {
+bool Instance::D_nei(szt v) const {
 	return m_D_nei[v];
 }
 
-const std::unordered_set <size_t>& Instance::dom(size_t v) const {
+const hash_set <szt>& Instance::dom(szt v) const {
 	return m_doms[v];
 }
 
-const std::unordered_set <size_t>& Instance::cov(size_t v) const {
+const hash_set <szt>& Instance::cov(szt v) const {
 	return m_covs[v];
 }
 
-const std::unordered_set <size_t>& Instance::nX() const {
+const hash_set <szt>& Instance::nX() const {
 	return m_nX;
 }
 
-size_t Instance::D_size() const {
+szt Instance::D_size() const {
 	return m_D_size;
 }
 
-bool Instance::can_insert_X(size_t v) const {
-	for (size_t nei : m_g[v]) {
+bool Instance::can_insert_X(szt v) const {
+	for (szt nei : m_g[v]) {
 		if (m_doms[nei].size() == 1 && *m_doms[nei].begin() == v && !m_W[nei]) return false;
 	}
 	if (m_doms[v].size() == 1 && !m_W[v]) return false;
@@ -447,13 +454,13 @@ bool Instance::can_insert_X(size_t v) const {
 std::string Instance::solution() const {
 	std::ostringstream oss;
 	std::vector <int> in_D;
-	for (size_t v = 0; v < m_g.n; v++) {
+	for (szt v = 0; v < m_g.n; v++) {
 		if (m_D[v]) {
 			in_D.push_back(v);
 		}
 	}
 	oss << in_D.size() << "\n";
-	for (size_t v : in_D) {
+	for (szt v : in_D) {
 		oss << v + 1 << "\n";
 	}
 	return oss.str();
@@ -461,21 +468,22 @@ std::string Instance::solution() const {
 
 std::string Instance::current_graph_string() const {
 	std::ostringstream oss;
-	size_t n = m_alives.size();
-	std::unordered_map <size_t, size_t> coord_compr;
-	for (size_t v : m_alives) {
-		size_t now = coord_compr.size();
+	szt n = m_alives.size();
+	hash_map <szt, szt> coord_compr;
+	// reserve(coord_compr, m_alives.size());
+	for (szt v : m_alives) {
+		szt now = coord_compr.size();
 		coord_compr[v] = now;
 	}
-	std::vector <std::pair <size_t, size_t>> ed;
-	for (size_t v : m_alives) {
-		for (size_t u : m_g[v]) {
+	std::vector <std::pair <szt, szt>> ed;
+	for (szt v : m_alives) {
+		for (szt u : m_g[v]) {
 			if (v < u) {
 				ed.emplace_back(coord_compr[v], coord_compr[u]);
 			}
 		}
 	}
-	size_t m = ed.size();
+	szt m = ed.size();
 	oss << "p ds " << n << " " << m << "\n";
 	for (auto [u, v] : ed) {
 		oss << u + 1 << " " << v + 1 << "\n";
@@ -506,11 +514,11 @@ void Instance::clear_adjusting_callbacks() {
 	}
 }
 
-size_t Instance::get_checkpoint() const {
+szt Instance::get_checkpoint() const {
 	return m_history.size();
 }
 
-void Instance::restore(size_t checkpoint) {
+void Instance::restore(szt checkpoint) {
 	while (m_history.size() > checkpoint) {
 		m_history.back()(*this);
 		m_history.pop_back();

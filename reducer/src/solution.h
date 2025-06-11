@@ -8,22 +8,22 @@ class Solution {
 
 public:
 
-	Solution(size_t n);
-	Solution(size_t n, const Instance& instance);
+	Solution(szt n);
+	Solution(szt n, const Instance& instance);
 
-	size_t n() const;
+	szt n() const;
 
-	size_t size() const;
+	szt size() const;
 
-	bool in(size_t v) const;
+	bool in(szt v) const;
 
-	void insert(size_t v);
+	void insert(szt v);
 
 	std::string solution() const;
 
 private:
 
-	size_t m_sol_size;
+	szt m_sol_size;
 	std::vector <bool> m_set;
 
 };

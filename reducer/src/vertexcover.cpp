@@ -17,8 +17,8 @@ bool vertex_cover_solution(Instance &instance) {
 
 	for(size_t i = 0; i < instance.g().n; ++i){
 		if(in_vertex_cover.count(i) || instance.g()[i].size() != 2)continue;
-		int fi = *instance.g()[i].begin(), se = *(++instance.g()[i].begin());
-		if(instance.g()[fi].contains(se)){
+		uint32_t fi = *instance.g()[i].begin(), se = *(++instance.g()[i].begin());
+		if(contains(instance.g()[fi], se)){
 			in_vertex_cover.insert(fi);
 			in_vertex_cover.insert(se);
 			not_in_vertex_cover.insert(i);
@@ -30,7 +30,7 @@ bool vertex_cover_solution(Instance &instance) {
 
 	for (auto& v : G) std::sort(v.begin(), v.end());
 
-	std::unordered_map <int, int> cc, icc;
+	hash_map <int, int> cc, icc;
 	for (int i = 0; i < (int) instance.g().n; i++)  {
 		if (G[i].empty()) continue;
 		cc[i] = cc.size();
@@ -62,7 +62,7 @@ bool vertex_cover_solution(Instance &instance) {
 
 	MIS = getExactMISCombined(H, mis_config);
 
-	// for(size_t i = 0; i < instance.g().n; ++i) assert(MIS[i] || deg[i]);
+	// for(size_t i = 0; i < instance.g().n; ++i) ASSERT(MIS[i] || deg[i]);
 
 	std::cout << "c \t\tResult"        << std::endl;	
 	std::cout << "c =========================================="                           << std::endl;

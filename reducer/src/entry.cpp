@@ -9,7 +9,7 @@ int main() {
 	Instance instance(G::read(std::cin));
 	if (!vertex_cover_solution(instance)) {
 		Solution solution(instance.g().n);
-		for (size_t i = 0; i < instance.g().n; i++) solution.insert(i);
+		for (szt i = 0; i < instance.g().n; i++) solution.insert(i);
 		BAB bab(solution);
 		bab.solve(instance);
 		bab.metrics().log(false);

@@ -18,11 +18,15 @@ INCLUDES = $(addprefix -I,$(MIS_INCLUDE_DIRS))
 LP_SOLVER = -DLP_CBC
 # LP_SOLVER = -DLP_SCIP
 
-CXX_FLAGS = -std=c++23 -Wshadow -Wall -Wfatal-errors $(LP_SOLVER) -I /usr/local/include/highs/
+# HASH_TABLE = -DHASH_TABLE_ROBIN_HOOD
+
+CXX_FLAGS = -std=c++23 -Wshadow -Wall -Wfatal-errors $(LP_SOLVER) $(HASH_TABLE) -I /usr/local/include/highs/
 CXX_FLAGS_MIS = -std=c++23 -Wshadow -Wall -Wfatal-errors -fopenmp $(INCLUDES)
 
-CXX_FLAGS_REL = $(CXX_FLAGS) -O3 -static
-CXX_FLAGS_REL_MIS = $(CXX_FLAGS_MIS) -O3 -static
+# TMP_CXX_FLAGS_REL_EXTRA = -g
+TMP_CXX_FLAGS_REL_EXTRA =
+CXX_FLAGS_REL = $(CXX_FLAGS) -O3 -static $(TMP_CXX_FLAGS_REL_EXTRA) -DNO_ASSERT
+CXX_FLAGS_REL_MIS = $(CXX_FLAGS_MIS) -O3 -static -DNO_ASSERT
 
 CXX_FLAGS_DBG = $(CXX_FLAGS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG
 CXX_FLAGS_DBG_MIS = $(CXX_FLAGS_MIS) -g -fsanitize=address,undefined -D_GLIBCXX_DEBUG

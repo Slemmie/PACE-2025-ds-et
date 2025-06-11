@@ -1,5 +1,7 @@
 #include "lp.h"
 
+#include "hash_table.h"
+
 #ifdef LP_CBC
 #include <coin/OsiClpSolverInterface.hpp>
 #include <coin/CbcModel.hpp>
@@ -33,14 +35,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-LP::LP(Objective_sense obj_sense, size_t num_variables, const Expression& obj_fun, const std::vector <Expression>& conditions) :
+LP::LP(Objective_sense obj_sense, szt num_variables, const Expression& obj_fun, const std::vector <Expression>& conditions) :
 m_obj_sense(obj_sense),
 m_num_variables(num_variables),
 m_obj_fun(obj_fun),
 m_conditions(conditions)
 { }
 
-std::vector <size_t> LP::solve() {
+std::vector <szt> LP::solve() {
 #ifdef LP_CBC
 	std::vector <double> obj(m_num_variables, 0);
 	for (Term term : m_obj_fun.terms) {
@@ -72,7 +74,7 @@ std::vector <size_t> LP::solve() {
 	solver.setObjSense(m_obj_sense == Objective_sense::MINIMIZE ? 1 : -1);
 	solver.loadProblem(matrix, col_lower.data(), col_upper.data(), obj.data(), row_lower.data(), row_upper.data());
 
-	for (size_t i = 0; i < m_num_variables; i++) {
+	for (szt i = 0; i < m_num_variables; i++) {
 		solver.setInteger(i);
 	}
 
@@ -100,8 +102,8 @@ std::vector <size_t> LP::solve() {
 	const double* solution = model.bestSolution();
 
 	if (solution) {
-		std::vector <size_t> result;
-		size_t num_c = solver.getNumCols();
+		std::vector <szt> result;
+		szt num_c = solver.getNumCols();
 		for (size_t i = 0; i < num_c; i++) {
 			if (std::round(solution[i]) == 1) {
 				result.push_back(i);
@@ -184,11 +186,11 @@ std::vector <size_t> LP::solve() {
 
 	HighsSolution solution = highs.getSolution();
 
-	std::vector <size_t> result;
+	std::vector <szt> result;
 	result.reserve(m_num_variables);
 	for (int j = 0; j < static_cast <int> (m_num_variables); j++) {
 		if (solution.col_value[j] > 0.5) {
-			result.push_back(static_cast <size_t> (j));
+			result.push_back(static_cast <szt> (j));
 		}
 	}
 	return result;
@@ -230,12 +232,12 @@ std::vector <size_t> LP::solve() {
 
 	std::vector <double> obj_coefs(m_num_variables, 0);
 	for (const Term& term : m_obj_fun.terms) {
-		assert(term.variable < m_num_variables);
+		ASSERT(term.variable < m_num_variables);
 		obj_coefs[term.variable] = static_cast <double> (term.coefficient);
 	}
 
 	std::vector <SCIP_VAR*> vars(m_num_variables, nullptr);
-	for (size_t i = 0; i < m_num_variables; i++) {
+	for (szt i = 0; i < m_num_variables; i++) {
 		std::string var_name = "x" + std::to_string(i);
 		SCIP_VAR* v = nullptr;
 		SCIPCALL(SCIPcreateVarBasic(scip, &v, var_name.c_str(), 0, 1, obj_coefs[i], SCIP_VARTYPE_BINARY));
@@ -252,7 +254,7 @@ std::vector <size_t> LP::solve() {
 		cons_coefs.reserve(expr.terms.size());
 
 		for (const Term& term : expr.terms) {
-			assert(term.variable < m_num_variables);
+			ASSERT(term.variable < m_num_variables);
 			cons_vars.push_back(vars[term.variable]);
 			cons_coefs.push_back(static_cast <double> (term.coefficient));
 		}
@@ -268,9 +270,9 @@ std::vector <size_t> LP::solve() {
 	SCIPCALL(SCIPsolve(scip));
 	SCIP_SOL* sol = SCIPgetBestSol(scip);
 
-	std::vector <size_t> result;
+	std::vector <szt> result;
 	if (sol != nullptr) {
-		for (size_t i = 0; i < m_num_variables; i++) {
+		for (szt i = 0; i < m_num_variables; i++) {
 			double val = SCIPgetSolVal(scip, sol, vars[i]);
 			if (val > 0.5) result.push_back(i);
 		}
@@ -286,7 +288,8 @@ std::vector <size_t> LP::solve() {
 }
 
 void LP::Expression::simplify() {
-	std::unordered_map <size_t, int> acc_coefs;
+	hash_map <szt, int> acc_coefs;
+	// reserve(acc_coefs, terms.size());
 	for (Term term : terms) {
 		acc_coefs[term.variable] += term.coefficient;
 	}
