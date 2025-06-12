@@ -9,9 +9,9 @@ public:
 
 	Reducer(
 		std::function <Metrics (Instance&)> finalize_callback,
-		size_t articulation_point_component_size_cutoff = 100,
-		size_t cut2_component_size_cutoff = 100,
-		size_t cut_rules_recs = 1
+		szt articulation_point_component_size_cutoff = 100,
+		szt cut2_component_size_cutoff = 100,
+		szt cut_rules_recs = 1
 	);
 
 	void reduce(Instance& instance);
@@ -24,14 +24,14 @@ private:
 
 	std::function <Metrics (Instance&)> m_finalize_callback;
 
-	size_t m_finalize_cutoff;
-	size_t m_articulation_point_component_size_cutoff;
-	size_t m_cut2_component_size_cutoff;
+	szt m_finalize_cutoff;
+	szt m_articulation_point_component_size_cutoff;
+	szt m_cut2_component_size_cutoff;
 
-	size_t m_cut_rules_recs;
+	szt m_cut_rules_recs;
 
-	std::vector <std::pair <size_t, size_t>> m_d3;
-	std::unordered_set <size_t> m_rule2_nh_banned;
+	std::vector <std::pair <szt, szt>> m_d3;
+	hash_set <szt> m_rule2_nh_banned;
 
 private:
 

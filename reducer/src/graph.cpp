@@ -4,13 +4,13 @@
 #include <format>
 #include <stdexcept>
 
-G::G(size_t _n, size_t _m) : n(_n), m(_m), adj(_n) { }
+G::G(szt _n, szt _m) : n(_n), m(_m), adj(_n) { }
 
-void G::add(size_t u, size_t v) {
+void G::add(szt u, szt v) {
 	if (u == v) {
 		throw std::invalid_argument(std::format("attempt to insert self-loop ({}, {}) in graph", u, v));
 	}
-	if (adj[u].contains(v)) {
+	if (contains(adj[u], v)) {
 		throw std::invalid_argument(std::format("attempt to insert edge ({}, {}) in graph, but it already exists", u, v));
 	}
 	adj[u].insert(v);
@@ -18,8 +18,8 @@ void G::add(size_t u, size_t v) {
 	m++;
 }
 
-void G::erase(size_t u, size_t v) {
-	if (!adj[u].contains(v)) {
+void G::erase(szt u, szt v) {
+	if (!contains(adj[u], v)) {
 		throw std::invalid_argument(std::format("attempt to erase edge ({}, {}) from graph, but it doesn't exist", u, v));
 	}
 	adj[u].erase(v);
@@ -27,8 +27,8 @@ void G::erase(size_t u, size_t v) {
 	m--;
 }
 
-size_t G::add_vertex() {
-	size_t index = n;
+szt G::add_vertex() {
+	szt index = n;
 	n++;
 	adj.resize(n);
 	return index;
@@ -42,14 +42,14 @@ void G::pop_vertex() {
 	adj.pop_back();
 }
 
-const std::unordered_set <size_t>& G::operator [] (size_t index) const {
+const hash_set <szt>& G::operator [] (szt index) const {
 	if (index >= n) {
 		throw std::invalid_argument(std::format("attempt to access the neighbor set of {}, but graph only contains {} vertices", index, n));
 	}
 	return adj[index];
 }
 
-std::unordered_set <size_t>& G::operator [] (size_t index) {
+hash_set <szt>& G::operator [] (szt index) {
 	if (index >= n) {
 		throw std::invalid_argument(std::format("attempt to access the neighbor set of {}, but graph only contains {} vertices", index, n));
 	}
@@ -58,17 +58,17 @@ std::unordered_set <size_t>& G::operator [] (size_t index) {
 
 std::ostream& operator << (std::ostream& os, const G& g) {
 	os << "graph, n = " << g.n << "\n";
-	for (size_t i = 0; i < g.n; i++) {
+	for (szt i = 0; i < g.n; i++) {
 		os << "\t" << i << ": {";
-		for (size_t x : g[i]) os << " " << x;
+		for (szt x : g[i]) os << " " << x;
 		os << " }\n";
 	}
 	return os;
 }
 
 G G::read(std::istream& inf) {
-	size_t n, m;
-	std::vector <std::pair <size_t, size_t>> ed;
+	szt n, m;
+	std::vector <std::pair <szt, szt>> ed;
 	{
 		std::string line;
 		while (std::getline(inf, line)) {
@@ -80,7 +80,7 @@ G G::read(std::istream& inf) {
 				std::string dummy;
 				iss >> dummy >> n >> m;
 			} else {
-				size_t u, v;
+				szt u, v;
 				std::istringstream edge_stream(line);
 				if (edge_stream >> u >> v) {
 					if (u != v)

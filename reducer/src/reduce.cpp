@@ -13,9 +13,9 @@
 
 Reducer::Reducer(
 	std::function <Metrics (Instance&)> finalize_callback,
-	size_t articulation_point_component_size_cutoff,
-	size_t cut2_component_size_cutoff,
-	size_t cut_rules_recs
+	szt articulation_point_component_size_cutoff,
+	szt cut2_component_size_cutoff,
+	szt cut_rules_recs
 ) :
 m_finalize_callback(finalize_callback),
 m_articulation_point_component_size_cutoff(articulation_point_component_size_cutoff),
@@ -81,19 +81,19 @@ void Reducer::reduce(Instance& instance) {
 		m_branch_by_disconnected_components(instance); // the largest one is reduced below, the rest have been branched by and will not be reduced further
 
 		m_d3.clear();
-		for (size_t v : instance.alives()) {
+		for (szt v : instance.alives()) {
 			if (instance.X(v)) continue;
-			std::queue <std::pair <size_t, uint8_t>> q;
+			std::queue <std::pair <szt, uint8_t>> q;
 			q.emplace(v, 0);
-			std::unordered_set <size_t> vis;
+			hash_set <szt> vis;
 			while (!q.empty()) {
 				auto [u, d] = q.front();
 				q.pop();
-				if (vis.contains(u)) continue;
+				if (contains(vis, u)) continue;
 				if (d > 3) continue;
 				if (!instance.X(u)) m_d3.emplace_back(v, u);
 				vis.insert(u);
-				for (size_t x : instance.g()[u]) {
+				for (szt x : instance.g()[u]) {
 					if (x < v) {
 						q.emplace(x, d + 1);
 					}
@@ -124,8 +124,8 @@ void Reducer::reduce(Instance& instance) {
 	if (instance.nX().size() >= std::min(m_articulation_point_component_size_cutoff, m_cut2_component_size_cutoff) && m_cut_rules_recs > 0) {
 		std::ostringstream oss;
 		// oss << "c increased cutoff constants from (" << m_articulation_point_component_size_cutoff << ", " << m_cut2_component_size_cutoff << ")";
-		size_t articulation_point_component_size_cutoff = m_articulation_point_component_size_cutoff * 2;
-		size_t cut2_component_size_cutoff = m_cut2_component_size_cutoff * 2;
+		szt articulation_point_component_size_cutoff = m_articulation_point_component_size_cutoff * 2;
+		szt cut2_component_size_cutoff = m_cut2_component_size_cutoff * 2;
 		// oss << " to (" << articulation_point_component_size_cutoff << ", " << cut2_component_size_cutoff << ")";
 // #ifdef ENABLE_STDERR
 // 		std::cerr << oss.str() << std::endl;

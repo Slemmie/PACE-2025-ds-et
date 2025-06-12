@@ -1,39 +1,41 @@
 #pragma once
 
+#include "common.h"
+
 #include <vector>
 
 struct Metrics {
-	size_t rule_A = 0;
-	size_t rule_B = 0;
-	size_t rule_C = 0;
+	szt rule_A = 0;
+	szt rule_B = 0;
+	szt rule_C = 0;
 
-	size_t rule1_steps = 0;
-	size_t rule1_deletions = 0;
+	szt rule1_steps = 0;
+	szt rule1_deletions = 0;
 
-	size_t rule2_steps = 0;
-	size_t rule2_deletions = 0;
-	size_t rule2_additions_vertices = 0;
-	size_t rule2_additions_edges = 0;
+	szt rule2_steps = 0;
+	szt rule2_deletions = 0;
+	szt rule2_additions_vertices = 0;
+	szt rule2_additions_edges = 0;
 
-	size_t island_vertices_removed = 0;
+	szt island_vertices_removed = 0;
 
-	size_t leaves_peeled = 0;
+	szt leaves_peeled = 0;
 
-	size_t tri_tri_edges_removed = 0;
+	szt tri_tri_edges_removed = 0;
 
-	size_t white_white_edges_removed = 0;
+	szt white_white_edges_removed = 0;
 
-	size_t W_X_vertices_removed = 0;
+	szt W_X_vertices_removed = 0;
 
-	size_t W_Wnh_vertices_removed = 0;
+	szt W_Wnh_vertices_removed = 0;
 
-	size_t all_W_removals = 0;
+	szt all_W_removals = 0;
 
-	std::vector <size_t> articulation_point_reductions;
+	std::vector <szt> articulation_point_reductions;
 
-	size_t cut2_missing_gadget_encounters = 0;
+	szt cut2_missing_gadget_encounters = 0;
 
-	std::vector <size_t> cut2_hits;
+	std::vector <szt> cut2_hits;
 
 	void log(bool include_stderr = false) const;
 

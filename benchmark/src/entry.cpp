@@ -96,15 +96,17 @@ int main(int argc, char** argv) {
 	double size_multiplier = std::stod(argv[2]);
 
 	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 30), outdir + std::format("{:03d}", i) + "_full_random.gr");
-	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 60), outdir + std::format("{:03d}", i + 10) + "_full_random.gr");
-	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 90), outdir + std::format("{:03d}", i + 20) + "_full_random.gr");
-	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 120), outdir + std::format("{:03d}", i + 30) + "_full_random.gr");
-	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 30), int(i * 5 * size_multiplier), outdir + std::format("{:03d}", i + 40) + "_low_upper_bound.gr");
-	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 60), int(i * 5 * size_multiplier), outdir + std::format("{:03d}", i + 50) + "_low_upper_bound.gr");
-	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 90), int(i * 10 * size_multiplier), outdir + std::format("{:03d}", i + 60) + "_low_upper_bound.gr");
-	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 120), int(i * 10 * size_multiplier), outdir + std::format("{:03d}", i + 70) + "_low_upper_bound.gr");
-	for(int i = 1; i <= 10; ++i) generate_vertex_cover(int(i * size_multiplier * 20), int(i * size_multiplier * 60), outdir + std::format("{:03d}", i + 80) + "_vertex_cover.gr");
-	for(int i = 1; i <= 10; ++i) generate_vertex_cover(int(i * size_multiplier * 20), int(i * size_multiplier * 120), outdir + std::format("{:03d}", i + 90) + "_vertex_cover.gr");
+	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 43), outdir + std::format("{:03d}", i + 10) + "_full_random.gr");
+	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 60), outdir + std::format("{:03d}", i + 20) + "_full_random.gr");
+	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 90), outdir + std::format("{:03d}", i + 30) + "_full_random.gr");
+	for(int i = 1; i <= 10; ++i) generate_full_random(int(i * size_multiplier * 20), int(i * size_multiplier * 120), outdir + std::format("{:03d}", i + 40) + "_full_random.gr");
+	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 30), int(i * 5 * size_multiplier), outdir + std::format("{:03d}", i + 50) + "_low_upper_bound.gr");
+	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 43), int(i * 5 * size_multiplier), outdir + std::format("{:03d}", i + 60) + "_low_upper_bound.gr");
+	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 60), int(i * 5 * size_multiplier), outdir + std::format("{:03d}", i + 70) + "_low_upper_bound.gr");
+	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 90), int(i * 10 * size_multiplier), outdir + std::format("{:03d}", i + 80) + "_low_upper_bound.gr");
+	for(int i = 1; i <= 10; ++i) generate_low_upper_bound(int(i * size_multiplier * 30), int(i * size_multiplier * 120), int(i * 10 * size_multiplier), outdir + std::format("{:03d}", i + 90) + "_low_upper_bound.gr");
+	for(int i = 1; i <= 5; ++i) generate_vertex_cover(int(i * size_multiplier * 20), int(i * size_multiplier * 60), outdir + std::format("{:03d}", i + 100) + "_vertex_cover.gr");
+	for(int i = 1; i <= 5; ++i) generate_vertex_cover(int(i * size_multiplier * 20), int(i * size_multiplier * 120), outdir + std::format("{:03d}", i + 105) + "_vertex_cover.gr");
 }
 
 std::string read(std::filesystem::path path) {
