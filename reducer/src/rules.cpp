@@ -30,23 +30,26 @@ bool Reducer::m_rule_B(Instance& instance) { // O(n)
 	bool found = 0;
 	std::vector <size_t> to_X;
 	std::unordered_set <size_t> lazy_determined;
+	/*
 	std::unordered_map <size_t, size_t> degree;
-
 	for (size_t u : instance.undetermined()) {
 		for (size_t v : instance.g()[u]) {
 			degree[v]++;
 		}
 	}
+	*/
 
-	for (size_t u : instance.undetermined()) {
+	for (size_t u : instance.active_undetermined()) {
 		if(instance.cov(u).empty()) continue;
 		std::unordered_set <size_t> subset_coverage;
 		size_t first = *instance.cov(u).begin();
+		/*
 		for (size_t v : instance.cov(u)) {
 			if(degree[v] < degree[first]) {
 				std::swap(v, first);
 			}
 		}
+		*/
 		for (size_t w : instance.g()[first]) {
 			if (instance.undetermined().contains(w) && !lazy_determined.contains(w)) {
 				subset_coverage.insert(w);
@@ -70,12 +73,15 @@ bool Reducer::m_rule_B(Instance& instance) { // O(n)
 		if (!subset_coverage.empty()) {
 			to_X.emplace_back(u);
 			lazy_determined.insert(u);
+			/*
 			for (size_t v : instance.g()[u]) {
 				degree[v]--;
 			}
+			*/
 			found = 1;
 		}
 	}
+	instance.clear_active_undetermined();
 	for (size_t u : to_X){
 		assert(!instance.X(u));
 		instance.insert_X(u);
@@ -89,6 +95,7 @@ bool Reducer::m_rule_C(Instance& instance) { // O(n)
 	std::vector <size_t> to_W;
 	std::unordered_set <size_t> lazy_dominated;
 
+	/*
 	std::unordered_map <size_t, size_t> degree;
 
 	for (size_t u : instance.undominated()) {
@@ -96,17 +103,20 @@ bool Reducer::m_rule_C(Instance& instance) { // O(n)
 			degree[v]++;
 		}
 	}
+	*/
 
-	for (size_t u : instance.undominated()) {
+	for (size_t u : instance.active_undominated()) {
 		if(instance.dom(u).empty()) continue;
 		if(lazy_dominated.contains(u))continue;
 		std::unordered_set <size_t> ignorable_vertices;
 		size_t first = *instance.dom(u).begin();
+		/*
 		for (size_t v : instance.dom(u)) {
 			if(degree[v] < degree[first]) {
 				std::swap(v, first);
 			}
 		}
+		*/
 		for (size_t w : instance.g()[first]) {
 			if (instance.undominated().contains(w) && !lazy_dominated.contains(w)) {
 				ignorable_vertices.insert(w);
@@ -131,12 +141,15 @@ bool Reducer::m_rule_C(Instance& instance) { // O(n)
 			if(!instance.W(v) && !lazy_dominated.contains(v)) {
 				to_W.push_back(v);
 				lazy_dominated.insert(v);
+				/*
 				for (size_t w : instance.g()[v]) {
 					degree[w]--;
 				}
+				*/
 			}
 		}
 	}
+	instance.clear_active_undominated();
 	if(to_W.size()) {
 		found = 1;
 		for (size_t u : to_W) {

@@ -29,6 +29,8 @@ m_D_nei(g.n, false)
 		}
 		m_nX.insert(v);
 	}
+	m_active_undetermined = m_undetermined;
+	m_active_undominated = m_undominated;
 }
 
 void Instance::insert_W(size_t v) {
@@ -40,18 +42,31 @@ void Instance::insert_W(size_t v) {
 	std::vector <size_t> erased_from_covs;
 
 	m_undominated.erase(v);
+	m_active_undominated.erase(v);
 	m_W[v] = true;
-	if (m_covs[v].contains(v)) erased_from_covs.push_back(v);
-	m_covs[v].erase(v);
+	if (m_covs[v].contains(v)) {
+		erased_from_covs.push_back(v);
+		m_covs[v].erase(v);
+		if(m_undetermined.contains(v)) m_active_undetermined.insert(v);
+	}
 	for (size_t nei : m_g[v]) {
-		if (m_covs[nei].contains(v)) erased_from_covs.push_back(nei);
-		m_covs[nei].erase(v);
+		if (m_covs[nei].contains(v)) {
+			erased_from_covs.push_back(nei);
+			m_covs[nei].erase(v);
+			if(m_undetermined.contains(nei)) m_active_undetermined.insert(nei);
+		}
 	}
 
 	auto undo = [v, was_erased_from_undominated, was_inserted_into_W, erased_from_covs] (Instance& inst) -> void {
-		if (was_erased_from_undominated) inst.m_undominated.insert(v);
+		if (was_erased_from_undominated) {
+			inst.m_undominated.insert(v);
+			inst.m_active_undominated.insert(v);
+		}
 		if (was_inserted_into_W) inst.m_W[v] = false;
-		for (size_t x : erased_from_covs) inst.m_covs[x].insert(v);
+		for (size_t x : erased_from_covs) {
+			inst.m_covs[x].insert(v);
+			if(inst.m_undetermined.contains(x)) inst.m_active_undetermined.insert(x);
+		}
 	};
 	m_history.push_back(undo);
 }
@@ -84,12 +99,17 @@ void Instance::insert_D(size_t v) {
 	bool was_erased_from_nX = m_nX.contains(v);
 
 	m_undetermined.erase(v);
+	m_active_undetermined.erase(v);
 	m_undominated.erase(v);
+	m_active_undominated.erase(v);
 	m_D_size++;
 	m_D[v] = true;
 	for (size_t nei : m_g[v]) {
-		if (m_undominated.contains(nei)) erased_from_undominated.push_back(nei);
-		m_undominated.erase(nei);
+		if (m_undominated.contains(nei)) {
+			erased_from_undominated.push_back(nei);
+			m_undominated.erase(nei);
+			m_active_undominated.erase(nei);
+		}
 	}
 	for (size_t nei : m_g_orig[v]) {
 		if (m_D_nei[nei] == false) inserted_into_D_nei.push_back(nei);
@@ -98,8 +118,14 @@ void Instance::insert_D(size_t v) {
 	m_nX.erase(v);
 
 	auto undo = [v, was_erased_from_undetermined, erased_from_undominated, was_inserted_into_D, inserted_into_D_nei, was_erased_from_nX] (Instance& inst) -> void {
-		if (was_erased_from_undetermined) inst.m_undetermined.insert(v);
-		for (size_t x : erased_from_undominated) inst.m_undominated.insert(x);
+		if (was_erased_from_undetermined) {
+			inst.m_undetermined.insert(v);
+			inst.m_active_undetermined.insert(v);
+		}
+		for (size_t x : erased_from_undominated) {
+			inst.m_undominated.insert(x);
+			inst.m_active_undominated.insert(x);
+		}
 		inst.m_D_size--;
 		if (was_inserted_into_D) inst.m_D[v] = false;
 		for (size_t x : inserted_into_D_nei) inst.m_D_nei[x] = false;
@@ -130,19 +156,32 @@ void Instance::insert_X(size_t v) {
 
 	m_nX.erase(v);
 	m_undetermined.erase(v);
+	m_active_undetermined.erase(v);
 	m_X[v] = true;
-	if (m_doms[v].contains(v)) erased_from_doms.push_back(v);
-	m_doms[v].erase(v);
+	if (m_doms[v].contains(v)) {
+		erased_from_doms.push_back(v);
+		m_doms[v].erase(v);
+		if(m_undominated.contains(v)) m_active_undominated.insert(v);
+	}
 	for (size_t nei : m_g[v]) {
-		if (m_doms[nei].contains(v)) erased_from_doms.push_back(nei);
-		m_doms[nei].erase(v);
+		if (m_doms[nei].contains(v)) {
+			erased_from_doms.push_back(nei);
+			m_doms[nei].erase(v);
+			if(m_undominated.contains(nei)) m_active_undominated.insert(nei);
+		}
 	}
 
 	auto undo = [v, was_erased_from_nX, was_erased_from_undetermined, was_inserted_into_X, erased_from_doms] (Instance& inst) -> void {
 		if (was_erased_from_nX) inst.m_nX.insert(v);
-		if (was_erased_from_undetermined) inst.m_undetermined.insert(v);
+		if (was_erased_from_undetermined) {
+			inst.m_undetermined.insert(v);
+			inst.m_active_undetermined.insert(v);
+		}
 		if (was_inserted_into_X) inst.m_X[v] = false;
-		for (size_t x : erased_from_doms) inst.m_doms[x].insert(v);
+		for (size_t x : erased_from_doms) {
+			inst.m_doms[x].insert(v);
+			if(inst.m_undominated.contains(x)) inst.m_active_undominated.insert(x);
+		}
 	};
 	m_history.push_back(undo);
 }
@@ -158,19 +197,32 @@ void Instance::remove_X(size_t v) {
 
 	m_nX.insert(v);
 	m_undetermined.insert(v);
+	m_active_undetermined.insert(v);
 	m_X[v] = false;
-	if (!m_doms[v].contains(v)) inserted_into_doms.push_back(v);
-	m_doms[v].insert(v);
+	if (!m_doms[v].contains(v)) {
+		inserted_into_doms.push_back(v);
+		m_doms[v].insert(v);
+		if(m_undominated.contains(v)) m_active_undominated.insert(v);
+	}
 	for (size_t nei : m_g[v]) {
-		if (!m_doms[nei].contains(v)) inserted_into_doms.push_back(nei);
-		m_doms[nei].insert(v);
+		if (!m_doms[nei].contains(v)) {
+			inserted_into_doms.push_back(nei);
+			m_doms[nei].insert(v);
+			if(m_undominated.contains(nei)) m_active_undominated.insert(nei);
+		}
 	}
 
 	auto undo = [v, was_inserted_into_nX, was_inserted_into_undetermined, was_erased_from_X, inserted_into_doms] (Instance& inst) -> void {
 		if (was_inserted_into_nX) inst.m_nX.erase(v);
-		if (was_inserted_into_undetermined) inst.m_undetermined.erase(v);
+		if (was_inserted_into_undetermined) {
+			inst.m_undetermined.erase(v);
+			inst.m_active_undetermined.erase(v);
+		}
 		if (was_erased_from_X) inst.m_X[v] = true;
-		for (size_t x : inserted_into_doms) inst.m_doms[x].erase(v);
+		for (size_t x : inserted_into_doms) {
+			inst.m_doms[x].erase(v);
+			if(inst.m_undominated.contains(x)) inst.m_active_undominated.insert(x);
+		}
 	};
 	m_history.push_back(undo);
 }
@@ -188,15 +240,23 @@ void Instance::erase(size_t v) {
 	std::vector <std::pair <size_t, size_t>> edges_erased;
 
 	m_undetermined.erase(v);
+	m_active_undetermined.erase(v);
 	m_undominated.erase(v);
+	m_active_undominated.erase(v);
 	m_nX.erase(v);
 	m_alives.erase(v);
 	std::vector <size_t> to_del;
 	for (size_t nei : m_g[v]) {
-		if (m_doms[nei].contains(v)) erased_from_doms.push_back(nei);
-		if (m_covs[nei].contains(v)) erased_from_covs.push_back(nei);
-		m_doms[nei].erase(v);
-		m_covs[nei].erase(v);
+		if (m_doms[nei].contains(v)) {
+			erased_from_doms.push_back(nei);
+			m_doms[nei].erase(v);
+			if(m_undominated.contains(nei)) m_active_undominated.insert(nei);
+		}
+		if (m_covs[nei].contains(v)) {
+			erased_from_covs.push_back(nei);
+			m_covs[nei].erase(v);
+			if(m_undetermined.contains(nei)) m_active_undetermined.insert(nei);
+		}
 		to_del.emplace_back(nei);
 	}
 	for (size_t nei : to_del) {
@@ -214,12 +274,24 @@ void Instance::erase(size_t v) {
 		erased_from_covs,
 		edges_erased
 	] (Instance& inst) -> void {
-		if (was_erased_from_undetermined) inst.m_undetermined.insert(v);
-		if (was_erased_from_undominated) inst.m_undominated.insert(v);
+		if (was_erased_from_undetermined) {
+			inst.m_undetermined.insert(v);
+			inst.m_active_undetermined.insert(v);
+		}
+		if (was_erased_from_undominated) {
+			inst.m_undominated.insert(v);
+			inst.m_active_undominated.insert(v);
+		}
 		if (was_erased_from_nX) inst.m_nX.insert(v);
 		if (was_erased_from_alives) inst.m_alives.insert(v);
-		for (size_t x : erased_from_doms) inst.m_doms[x].insert(v);
-		for (size_t x : erased_from_covs) inst.m_covs[x].insert(v);
+		for (size_t x : erased_from_doms) {
+			inst.m_doms[x].insert(v);
+			if(inst.m_undominated.contains(x)) inst.m_active_undominated.insert(x);
+		}
+		for (size_t x : erased_from_covs) {
+			inst.m_covs[x].insert(v);
+			if(inst.m_undetermined.contains(x)) inst.m_active_undetermined.insert(x);
+		}
 		for (auto [x, y] : edges_erased) inst.m_g.add(x, y);
 	};
 	m_history.push_back(undo);
@@ -230,7 +302,9 @@ size_t Instance::insert() {
 	m_g_orig.add_vertex();
 	m_alives.insert(index);
 	m_undetermined.insert(index);
+	m_active_undetermined.insert(index);
 	m_undominated.insert(index);
+	m_active_undominated.insert(index);
 	m_W.push_back(false);
 	m_D.push_back(false);
 	m_X.push_back(false);
@@ -244,7 +318,9 @@ size_t Instance::insert() {
 		inst.m_g_orig.pop_vertex();
 		inst.m_alives.erase(index);
 		inst.m_undetermined.erase(index);
+		inst.m_active_undetermined.erase(index);
 		inst.m_undominated.erase(index);
+		inst.m_active_undominated.erase(index);
 		inst.m_W.pop_back();
 		inst.m_D.pop_back();
 		inst.m_X.pop_back();
@@ -273,19 +349,37 @@ void Instance::delete_edge(size_t u, size_t v) {
 	std::vector <std::pair <size_t, size_t>> covs_erases;
 
 	m_g.erase(u, v);
-	if (m_doms[u].contains(v)) doms_erases.emplace_back(u, v);
-	m_doms[u].erase(v);
-	if (m_covs[u].contains(v)) covs_erases.emplace_back(u, v);
-	m_covs[u].erase(v);
-	if (m_doms[v].contains(u)) doms_erases.emplace_back(v, u);
-	m_doms[v].erase(u);
-	if (m_covs[v].contains(u)) covs_erases.emplace_back(v, u);
-	m_covs[v].erase(u);
+	if (m_doms[u].contains(v)) {
+		doms_erases.emplace_back(u, v);
+		m_doms[u].erase(v);
+		if(m_undominated.contains(u)) m_active_undominated.insert(u);
+	}
+	if (m_covs[u].contains(v)) {
+		covs_erases.emplace_back(u, v);
+		m_covs[u].erase(v);
+		if(m_undetermined.contains(u)) m_active_undetermined.insert(u);
+	}
+	if (m_doms[v].contains(u)) {
+		doms_erases.emplace_back(v, u);
+		m_doms[v].erase(u);
+		if(m_undominated.contains(v)) m_active_undominated.insert(v);
+	}
+	if (m_covs[v].contains(u)) {
+		covs_erases.emplace_back(v, u);
+		m_covs[v].erase(u);
+		if(m_undetermined.contains(v)) m_active_undetermined.insert(v);
+	}
 
 	auto undo = [u, v, doms_erases, covs_erases] (Instance& inst) -> void {
 		inst.m_g.add(u, v);
-		for (auto [x, y] : doms_erases) inst.m_doms[x].insert(y);
-		for (auto [x, y] : covs_erases) inst.m_covs[x].insert(y);
+		for (auto [x, y] : doms_erases) {
+			inst.m_doms[x].insert(y);
+			if(inst.m_undominated.contains(x)) inst.m_active_undominated.insert(x);
+		}
+		for (auto [x, y] : covs_erases) {
+			inst.m_covs[x].insert(y);
+			if(inst.m_undetermined.contains(x)) inst.m_active_undetermined.insert(x);
+		}
 	};
 	m_history.push_back(undo);
 }
@@ -307,20 +401,32 @@ void Instance::add_edge(size_t u, size_t v) {
 
 	m_g.add(u, v);
 	if (!m_X[v]) {
-		if (!m_doms[u].contains(v)) doms_insertions.emplace_back(u, v);
-		m_doms[u].insert(v);
+		if (!m_doms[u].contains(v)) {
+			doms_insertions.emplace_back(u, v);
+			m_doms[u].insert(v);
+			if(m_undominated.contains(u)) m_active_undominated.insert(u);
+		}
 	}
 	if (!m_X[u]) {
-		if (!m_doms[v].contains(u)) doms_insertions.emplace_back(v, u);
-		m_doms[v].insert(u);
+		if (!m_doms[v].contains(u)) {
+			doms_insertions.emplace_back(v, u);
+			m_doms[v].insert(u);
+			if(m_undominated.contains(v)) m_active_undominated.insert(v);
+		}
 	}
 	if (!m_D[v] && !m_W[v]) {
-		if (!m_covs[u].contains(v)) covs_insertions.emplace_back(u, v);
-		m_covs[u].insert(v);
+		if (!m_covs[u].contains(v)) {
+			covs_insertions.emplace_back(u, v);
+			m_covs[u].insert(v);
+			if(m_undetermined.contains(u)) m_active_undetermined.insert(u);
+		}
 	}
 	if (!m_D[u] && !m_W[u]) {
-		if (!m_covs[v].contains(u)) covs_insertions.emplace_back(v, u);
-		m_covs[v].insert(u);
+		if (!m_covs[v].contains(u)) {
+			covs_insertions.emplace_back(v, u);
+			m_covs[v].insert(u);
+			if(m_undetermined.contains(v)) m_active_undetermined.insert(v);
+		}
 	}
 	m_g_orig.add(u, v);
 	if (m_D[u]) {
@@ -334,13 +440,28 @@ void Instance::add_edge(size_t u, size_t v) {
 
 	auto undo = [u, v, doms_insertions, covs_insertions, D_nei_insertions] (Instance& inst) -> void {
 		inst.m_g.erase(u, v);
-		for (auto [x, y] : doms_insertions) inst.m_doms[x].erase(y);
-		for (auto [x, y] : covs_insertions) inst.m_covs[x].erase(y);
+		for (auto [x, y] : doms_insertions) {
+			inst.m_doms[x].erase(y);
+			if(inst.m_undominated.contains(x)) inst.m_active_undominated.insert(x);
+		}
+		for (auto [x, y] : covs_insertions) {
+			inst.m_covs[x].erase(y);
+			if(inst.m_undetermined.contains(x)) inst.m_active_undetermined.insert(x);
+		}
 		inst.m_g_orig.erase(u, v);
 		for (size_t x : D_nei_insertions) inst.m_D_nei[x] = false;
 	};
 	m_history.push_back(undo);
 }
+
+void Instance::clear_active_undetermined() {
+	m_active_undetermined.clear();
+}
+
+void Instance::clear_active_undominated() {
+	m_active_undominated.clear();
+}
+
 
 void Instance::insert_dead_into_D(size_t v) {
 	if (m_alives.contains(v)) {
@@ -400,8 +521,16 @@ const std::unordered_set <size_t>& Instance::undetermined() const {
 	return m_undetermined;
 }
 
+const std::unordered_set <size_t>& Instance::active_undetermined() const {
+	return m_active_undetermined;
+}
+
 const std::unordered_set <size_t>& Instance::undominated() const {
 	return m_undominated;
+}
+
+const std::unordered_set <size_t>& Instance::active_undominated() const {
+	return m_active_undominated;
 }
 
 bool Instance::W(size_t v) const {

@@ -29,6 +29,8 @@ public:
 	size_t insert();
 	void delete_edge(size_t u, size_t v);
 	void add_edge(size_t u, size_t v);
+	void clear_active_undetermined();
+	void clear_active_undominated();
 
 	// using these will make the instance unstable until history is restored to before their usage
 	// ! -> see note at clear_adjusting_callbacks() for when to be aware of this
@@ -40,6 +42,8 @@ public:
 	const std::unordered_set <size_t>& alives() const;
 	const std::unordered_set <size_t>& undetermined() const;
 	const std::unordered_set <size_t>& undominated() const;
+	const std::unordered_set <size_t>& active_undetermined() const;
+	const std::unordered_set <size_t>& active_undominated() const;
 	bool W(size_t v) const;
 	bool D(size_t v) const;
 	bool X(size_t v) const;
@@ -72,6 +76,8 @@ private:
 	std::unordered_set <size_t> m_alives;
 	std::unordered_set <size_t> m_undetermined;
 	std::unordered_set <size_t> m_undominated;
+	std::unordered_set <size_t> m_active_undetermined;
+	std::unordered_set <size_t> m_active_undominated;
 	std::vector <bool> m_W;
 	size_t m_D_size;
 	std::vector <bool> m_D;
