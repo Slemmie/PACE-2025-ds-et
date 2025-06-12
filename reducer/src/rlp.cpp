@@ -42,6 +42,8 @@ m_obj_fun(obj_fun),
 m_conditions(conditions)
 { }
 
+hash_map <szt, double> LPV;
+
 double RLP::solve() {
 #ifdef LP_CBC
 	std::vector <double> obj(m_num_variables, 0);
@@ -102,6 +104,15 @@ double RLP::solve() {
 	if (!model.isProvenOptimal()) {
 		delete(gomory);
 		return 0;
+	}
+
+	const double* sol = model.bestSolution();
+	if (sol) {
+		const size_t num_c = solver.getNumCols();
+		LPV.clear();
+		for (size_t i = 0; i < num_c; i++) {
+			LPV[i] = sol[i];
+		}
 	}
 
 	delete(gomory);

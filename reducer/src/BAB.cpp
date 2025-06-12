@@ -7,6 +7,10 @@
 #include <limits>
 #include <cassert>
 
+#include <cmath>
+
+extern hash_map <szt, double> LPV;
+
 void BAB::solve(Instance& instance) {
 	// reduce (should also prune lone white components)
 	auto finalize_callback = [this] (Instance& inst) -> Metrics {
@@ -57,8 +61,20 @@ void BAB::solve(Instance& instance) {
 	}
 	// select a branching vertex
 	szt bv = m_branch_vertex(instance);
-	std::vector <szt> bv_dom(instance.dom(bv).begin(), instance.dom(bv).end());
-	std::sort(bv_dom.begin(), bv_dom.end(), [&] (szt lhs, szt rhs) { return instance.cov(lhs).size() > instance.cov(rhs).size(); });
+	// std::vector <szt> bv_dom(instance.dom(bv).begin(), instance.dom(bv).end());
+	// std::sort(bv_dom.begin(), bv_dom.end(), [&] (szt lhs, szt rhs) {
+	// 	if (instance.cov(lhs).size() == instance.cov(rhs).size()) return std::fabs(0.5 - LPV[lhs]) < std::fabs(0.5 - LPV[rhs]);
+	// 	return instance.cov(lhs).size() > instance.cov(rhs).size();
+	// });
+	std::vector <szt> bv_dom = { *instance.dom(bv).begin() };
+	for (szt x : instance.dom(bv)) {
+		const szt lhs = x, rhs = bv_dom[0];
+		bool lt =
+			instance.cov(lhs).size() == instance.cov(rhs).size()
+			? std::fabs(0.5 - LPV[lhs]) < std::fabs(0.5 - LPV[rhs])
+			: instance.cov(lhs).size() > instance.cov(rhs).size();
+		if (lt) bv_dom[0] = x;
+	}
 	for (szt u : bv_dom) {
 		auto t = instance.get_checkpoint();
 		instance.insert_D(u);
@@ -74,6 +90,8 @@ void BAB::solve(Instance& instance) {
 			if (instance.dom(x).size() == 1) return;
 		}
 		instance.insert_X(u);
+		solve(instance); return; // <-- experiment: turns out to be have worked: re-decide where to branch (and also reduce() immediately)
+								 // instead of looping over the current choice of bv (a better choice might have emerged already)
 	}
 }
 

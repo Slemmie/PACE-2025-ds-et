@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+extern hash_map <szt, double> LPV;
+
 szt lower_bound(const Instance& instance) {
 	hash_map <szt, szt> cc, icc;
 	for (szt v : instance.alives()) {
@@ -25,9 +27,13 @@ szt lower_bound(const Instance& instance) {
 		if (condition.terms.empty()) continue;
 		conditions.push_back(condition);
 	}
+	LPV.clear();
 	if (conditions.empty()) return 0;
 	// if (conditions.size() > 800) return 0;
 	RLP rlp(RLP::Objective_sense::MINIMIZE, cc.size(), obj_fun, conditions);
 	szt result = std::ceil(rlp.solve() - 1e-4);
+	auto tmp = LPV;
+	LPV.clear();
+	for (auto [x, y] : tmp) LPV[icc[x]] = y;
 	return result + instance.D_size();
 }
